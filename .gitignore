@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# generated Prisma client (rebuilt by `prisma generate`)
+apps/api/src/generated/
+
+# tests
+coverage/
+
+# env files (only the example is committed)
+.env
+.env.*
+!.env.example
+
+# private working notes
+DECISIONS.md
+
+# logs and OS files
+*.log
+.DS_Store
+
+# editors and local tool settings
+.idea/
+.vscode/
+.claude/settings.local.json
