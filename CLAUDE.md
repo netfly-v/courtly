@@ -12,6 +12,10 @@ and a Next.js web app (`apps/web`). TypeScript strict everywhere. pnpm workspace
 - `pnpm test` — tests in every workspace (API tests need Docker: they start PostgreSQL with Testcontainers)
 - `docker compose up -d db` — local PostgreSQL on port 5434
 - `pnpm --filter @courtly/api dev` — API in watch mode (copy `apps/api/.env.example` to `apps/api/.env` first)
+- `pnpm --filter @courtly/api db:migrate --create-only --name <name>` — create a migration, review the SQL,
+  then run `pnpm --filter @courtly/api db:migrate` to apply it
+- `pnpm --filter @courtly/api db:generate` — regenerate the Prisma client after a schema change
+  (Prisma 7 `migrate dev` no longer does it)
 
 Keep this list in sync when you add a script.
 
