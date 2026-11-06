@@ -9,7 +9,9 @@ and a Next.js web app (`apps/web`). TypeScript strict everywhere. pnpm workspace
 - `pnpm lint` — ESLint for the whole repo
 - `pnpm format` / `pnpm format:check` — Prettier
 - `pnpm typecheck` — `tsc` in every workspace
-- `pnpm test` — tests in every workspace
+- `pnpm test` — tests in every workspace (API tests need Docker: they start PostgreSQL with Testcontainers)
+- `docker compose up -d db` — local PostgreSQL on port 5434
+- `pnpm --filter @courtly/api dev` — API in watch mode (copy `apps/api/.env.example` to `apps/api/.env` first)
 
 Keep this list in sync when you add a script.
 

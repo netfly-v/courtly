@@ -1,2 +1,15 @@
 packages:
   - apps/*
+
+allowBuilds:
+  # downloads the schema engine binary used by `prisma migrate`
+  '@prisma/engines': true
+  # checks the Node version before install
+  prisma: true
+  # analytics ping from swagger-ui-dist; the package works without it
+  '@scarf/scarf': false
+  # Testcontainers deps: ssh2 is only used for ssh:// Docker hosts,
+  # cpu-features is its optional native speedup, protobufjs only prints a version warning
+  ssh2: false
+  cpu-features: false
+  protobufjs: false

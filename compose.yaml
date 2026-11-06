@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: courtly
+      POSTGRES_PASSWORD: courtly
+      POSTGRES_DB: courtly
+    ports:
+      # 5434 on the host, so it does not clash with other local Postgres instances
+      - '5434:5432'
+    volumes:
+      # Postgres 18 keeps data under /var/lib/postgresql (not /var/lib/postgresql/data)
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  pgdata:
