@@ -4,10 +4,10 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import { SESSION_COOKIE } from './auth/session.js';
-import { configureApp } from './app.setup.js';
+import { APP_OPTIONS, configureApp } from './app.setup.js';
 import type { Environment } from './config/environment.js';
 
-const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
+const app = await NestFactory.create<NestExpressApplication>(AppModule, APP_OPTIONS);
 configureApp(app);
 app.enableShutdownHooks();
 

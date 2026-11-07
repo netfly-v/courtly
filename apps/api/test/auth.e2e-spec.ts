@@ -37,6 +37,7 @@ describe('auth', () => {
     expect(cookie).toMatch(/^courtly_session=[^;]+;/);
     expect(cookie).toContain('HttpOnly');
     expect(cookie).toContain('SameSite=Lax');
+    expect(cookie).not.toMatch(/;\s*Secure/i);
   });
 
   it('gives the same error for a wrong password and an unknown email', async () => {
@@ -49,6 +50,10 @@ describe('auth', () => {
       message: 'Wrong email or password',
     });
     expect(unknownEmail.body).toEqual(wrongPassword.body);
+  });
+
+  it('accepts the email in any letter case', async () => {
+    await login({ email: 'Auth-Test@Test.dev', password }).expect(200);
   });
 
   it('lists every invalid field', async () => {
@@ -96,10 +101,11 @@ describe('auth', () => {
       message: 'Please log in',
     });
 
-    const forged = new JwtService({ secret: 'another-secret-at-least-32-characters' });
-    await request(app.getHttpServer())
+    const forgedToken = new JwtService({ secret: 'another-secret-at-least-32-characters' });
+    const forged = await request(app.getHttpServer())
       .get('/api/auth/me')
-      .set('Cookie', `courtly_session=${forged.sign({ sub: userId })}`)
+      .set('Cookie', `courtly_session=${forgedToken.sign({ sub: userId })}`)
       .expect(401);
+    expect(forged.body).toEqual(noCookie.body);
   });
 });

@@ -71,6 +71,6 @@ export class AuthController {
   }
 
   private cookieOptions() {
-    return sessionCookieOptions(this.config.get('COOKIE_SECURE', { infer: true }));
+    return sessionCookieOptions(this.config.get('COOKIE_SECURE', { infer: true }) === 'true');
   }
 }

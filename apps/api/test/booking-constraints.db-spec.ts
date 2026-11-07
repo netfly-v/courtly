@@ -6,7 +6,7 @@ type Db = pg.Pool | pg.PoolClient;
 
 const OVERLAP_ERROR = { code: '23P01', constraint: 'booking_no_overlap' };
 
-describe('booking_no_overlap constraint', () => {
+describe('booking constraints', () => {
   const pool = new pg.Pool({ connectionString: inject('databaseUrl') });
   const userId = randomUUID();
   const courtId = randomUUID();
@@ -17,12 +17,15 @@ describe('booking_no_overlap constraint', () => {
     court: string,
     from: string,
     to: string,
-    status: 'ACTIVE' | 'CANCELLED' = 'ACTIVE'
+    {
+      status = 'ACTIVE',
+      totalPriceCents = 2000,
+    }: { status?: 'ACTIVE' | 'CANCELLED'; totalPriceCents?: number } = {}
   ) =>
     db.query(
       `INSERT INTO bookings (user_id, court_id, starts_at, ends_at, total_price_cents, status)
-       VALUES ($1, $2, $3, $4, 2000, $5)`,
-      [userId, court, `2030-06-01T${from}:00Z`, `2030-06-01T${to}:00Z`, status]
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [userId, court, `2030-06-01T${from}:00Z`, `2030-06-01T${to}:00Z`, totalPriceCents, status]
     );
 
   const countActiveBookings = async (db: Db, court: string) => {
@@ -64,7 +67,7 @@ describe('booking_no_overlap constraint', () => {
       await second.query('BEGIN');
       await insertBooking(first, courtId, '10:00', '12:00');
 
-      // The first booking is not committed yet, so a "check, then insert" guard in code would see a free slot.
+      // Not committed yet, so a "check, then insert" guard in code would see a free slot.
       expect(await countActiveBookings(second, courtId)).toBe(0);
 
       await Promise.all([
@@ -88,7 +91,7 @@ describe('booking_no_overlap constraint', () => {
   });
 
   it('ignores cancelled bookings', async () => {
-    await insertBooking(pool, courtId, '10:00', '12:00', 'CANCELLED');
+    await insertBooking(pool, courtId, '10:00', '12:00', { status: 'CANCELLED' });
     await insertBooking(pool, courtId, '10:00', '12:00');
 
     expect(await countActiveBookings(pool, courtId)).toBe(1);
@@ -99,5 +102,16 @@ describe('booking_no_overlap constraint', () => {
     await insertBooking(pool, otherCourtId, '10:00', '12:00');
 
     expect(await countActiveBookings(pool, otherCourtId)).toBe(1);
+  });
+
+  it.each([
+    ['90 minutes long', '10:00', '11:30', 2000, 'bookings_duration_check'],
+    ['3 hours long', '10:00', '13:00', 2000, 'bookings_duration_check'],
+    ['starting at 10:30', '10:30', '11:30', 2000, 'bookings_starts_on_the_hour_check'],
+    ['with a zero price', '10:00', '11:00', 0, 'bookings_total_price_check'],
+  ])('rejects a booking %s', async (_case, from, to, totalPriceCents, constraint) => {
+    await expect(insertBooking(pool, courtId, from, to, { totalPriceCents })).rejects.toMatchObject(
+      { code: '23514', constraint }
+    );
   });
 });

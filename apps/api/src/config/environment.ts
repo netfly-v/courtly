@@ -1,7 +1,7 @@
-// Stores the property types that enableImplicitConversion reads. Nest loads it too, but not before this file in tests.
+// Type metadata for enableImplicitConversion; unit tests load this file before Nest does.
 import 'reflect-metadata';
-import { plainToInstance, Transform } from 'class-transformer';
-import { IsBoolean, IsInt, Matches, Max, Min, MinLength, validateSync } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { IsIn, IsInt, Matches, Max, Min, MinLength, validateSync } from 'class-validator';
 
 export class Environment {
   @Matches(/^postgres(ql)?:\/\//, {
@@ -17,13 +17,11 @@ export class Environment {
   @MinLength(32, { message: 'JWT_SECRET must be at least 32 characters long' })
   JWT_SECRET: string;
 
-  // Implicit conversion runs before @Transform and Boolean('false') is true, so read the raw env text.
-  @Transform(({ obj }: { obj: Record<string, unknown> }) => obj.COOKIE_SECURE === 'true')
-  @IsBoolean()
-  COOKIE_SECURE: boolean = false;
+  // Text, not boolean: a typo like `TRUE` must stop the app instead of quietly turning Secure off.
+  @IsIn(['true', 'false'], { message: "COOKIE_SECURE must be 'true' or 'false'" })
+  COOKIE_SECURE: 'true' | 'false' = 'false';
 }
 
-// Fails at startup with a clear message instead of crashing later on the first query.
 export const validateEnvironment = (config: Record<string, unknown>): Environment => {
   const environment = plainToInstance(Environment, config, { enableImplicitConversion: true });
   const errors = validateSync(environment);

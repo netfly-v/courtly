@@ -3,7 +3,7 @@ import type { CookieOptions, Request } from 'express';
 import { ApiError } from '../common/api-error.js';
 
 export const SESSION_COOKIE = 'courtly_session';
-export const SESSION_TTL_SECONDS = 8 * 60 * 60; // 8 hours
+export const SESSION_TTL_SECONDS = 8 * 60 * 60;
 
 export interface SessionTokenPayload {
   sub: string;

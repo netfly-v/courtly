@@ -23,8 +23,9 @@ Keep this list in sync when you add a script.
 ## How we work
 
 - Small steps. The maintainer reviews every change and makes all commits.
-  Never run `git commit` or `git push`. Never add AI attribution to commits or files.
+  Never run `git commit` or `git push`.
 - Follow the patterns already in the codebase. Find the closest example and mirror it.
+- Before handing a step over, run the `comment-reviewer` and `test-reviewer` agents from `.claude/agents/`.
 - Nothing "for the future": no empty folders or files, no stubs, no types or config without a real consumer.
 - Pin versions on purpose. Prisma stays on 7.x (npm `latest` is a Prisma 8 release candidate).
   TypeScript stays on 6.x.

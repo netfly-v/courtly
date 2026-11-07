@@ -15,14 +15,13 @@ const toErrorBody = (exception: unknown): ApiErrorDto => {
     return exception.body;
   }
   if (exception instanceof HttpException) {
-    // Plain HttpExceptions (unknown route, broken JSON, health 503) take the code from the status name.
+    // Nest's built-in errors (unknown route, broken JSON, health 503) use the status name as code.
     const statusCode = exception.getStatus();
     return { statusCode, code: HttpStatus[statusCode] ?? 'HTTP_ERROR', message: exception.message };
   }
   return { statusCode: 500, code: 'INTERNAL_SERVER_ERROR', message: 'Something went wrong' };
 };
 
-// Every error leaves the API in one shape: { statusCode, code, message, details? }.
 @Catch()
 export class ApiErrorFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiErrorFilter.name);
