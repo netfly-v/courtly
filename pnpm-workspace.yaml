@@ -13,3 +13,5 @@ allowBuilds:
   ssh2: false
   cpu-features: false
   protobufjs: false
+  # tsx dep: only checks the platform binary, which pnpm already installs as an optional dependency
+  esbuild: false

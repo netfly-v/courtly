@@ -16,6 +16,7 @@ and a Next.js web app (`apps/web`). TypeScript strict everywhere. pnpm workspace
   then run `pnpm --filter @courtly/api db:migrate` to apply it
 - `pnpm --filter @courtly/api db:generate` — regenerate the Prisma client after a schema change
   (Prisma 7 `migrate dev` no longer does it)
+- `pnpm --filter @courtly/api db:seed` — add demo data (safe to run again; password `courtly-demo`)
 
 Keep this list in sync when you add a script.
 
