@@ -10,8 +10,8 @@ and a Next.js web app (`apps/web`). TypeScript strict everywhere. pnpm workspace
 - `pnpm format` / `pnpm format:check` — Prettier
 - `pnpm typecheck` — `tsc` in every workspace
 - `pnpm test` — tests in every workspace (API tests need Docker: they start PostgreSQL with Testcontainers)
-- `docker compose up --build` — the whole stack: PostgreSQL, migrations + seed, API on port 4000
-  (stop the local API dev server first, it uses the same port); `docker compose down -v` deletes the data,
+- `docker compose up --build` — the whole stack: PostgreSQL, migrations + seed, API on port 4000, web on port 3000
+  (stop the local dev servers first, they use the same ports); `docker compose down -v` deletes the data,
   including the local development database (same volume)
 - `docker compose up -d --wait db` — only PostgreSQL on port 5434, for local development
   (`--wait` returns once it is healthy)

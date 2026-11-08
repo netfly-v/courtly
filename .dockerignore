@@ -7,3 +7,4 @@
 **/.env.*
 !**/.env.example
 apps/api/src/generated
+apps/web/src/shared/api/generated

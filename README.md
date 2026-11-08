@@ -14,8 +14,11 @@ You need Docker. From the repo root:
 docker compose up --build
 ```
 
-This starts PostgreSQL, applies the migrations, adds demo data and starts the API.
-Then open Swagger at http://localhost:4000/api/docs.
+This starts PostgreSQL, applies the migrations, adds demo data and starts the API and the web app.
+Then open the app at http://localhost:3000 and pick a demo account on the login page.
+The API docs (Swagger) are at http://localhost:4000/api/docs.
+
+Ports 3000, 4000 and 5434 must be free, so stop the local dev servers first.
 
 Demo accounts, all with the password `courtly-demo`:
 

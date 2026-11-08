@@ -4,7 +4,8 @@ FROM node:24.22-slim
 # Prisma's engines need OpenSSL to pick the right binary, and the slim image has none.
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
   && rm -rf /var/lib/apt/lists/*
-RUN npm install --global pnpm@12.18.0
+# npm 11 warns about unlisted install scripts; pnpm's own one only installs its native binary.
+RUN npm install --global --allow-scripts=pnpm pnpm@12.18.0
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

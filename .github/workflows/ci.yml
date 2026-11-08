@@ -28,7 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: docker compose up --build -d
-      # `up -d` returns as soon as the api container starts, before Nest is listening.
-      - run: curl --fail --retry 30 --retry-delay 2 --retry-all-errors http://localhost:4000/api/health
+      # `up -d` waits for the API healthcheck, but the web server may still be starting.
+      - run: curl --fail --retry 30 --retry-delay 2 --retry-all-errors http://localhost:3000/login
+      # Through the web's /api proxy, so the API address baked into the web build is checked too.
+      - run: curl --fail http://localhost:3000/api/health
+      - run: curl --fail http://localhost:4000/api/health
       - if: failure()
         run: docker compose logs
