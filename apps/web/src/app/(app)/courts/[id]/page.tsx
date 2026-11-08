@@ -3,7 +3,8 @@ import { CourtBookingPage } from '@/features/bookings/containers/CourtBookingPag
 
 export const metadata: Metadata = { title: 'Book a court' };
 
-const CourtPage = async ({ params }: PageProps<'/courts/[id]'>) => {
+// Not Next's global PageProps: it comes from `next typegen`, which CI's lint step runs before.
+const CourtPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   return <CourtBookingPage courtId={id} />;
 };
