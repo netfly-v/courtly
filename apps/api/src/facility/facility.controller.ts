@@ -27,7 +27,7 @@ export class FacilityController {
   })
   @ApiOkResponse({ type: FacilityDto })
   @ApiUnauthorizedResponse(errorResponse(401, 'UNAUTHENTICATED', 'Please log in'))
-  get(): FacilityDto {
+  getFacility(): FacilityDto {
     return {
       timezone: this.config.get('FACILITY_TIMEZONE', { infer: true }),
       bookingDaysAhead: BOOKING_DAYS_AHEAD,

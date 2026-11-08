@@ -42,7 +42,7 @@ export class CourtsController {
     description: 'Users get active courts only. Admins get all courts, including turned-off ones.',
   })
   @ApiOkResponse({ type: [CourtDto] })
-  list(@CurrentUser() user: SessionUser): Promise<CourtDto[]> {
+  listCourts(@CurrentUser() user: SessionUser): Promise<CourtDto[]> {
     return this.courts.list(user);
   }
 
@@ -53,7 +53,7 @@ export class CourtsController {
   })
   @ApiOkResponse({ type: CourtDto })
   @ApiNotFoundResponse(notFound)
-  get(@Param() { id }: IdParamDto, @CurrentUser() user: SessionUser): Promise<CourtDto> {
+  getCourt(@Param() { id }: IdParamDto, @CurrentUser() user: SessionUser): Promise<CourtDto> {
     return this.courts.get(id, user);
   }
 
@@ -67,7 +67,7 @@ export class CourtsController {
   @ApiOkResponse({ type: AvailabilityDto })
   @ApiBadRequestResponse(invalidDayResponse)
   @ApiNotFoundResponse(notFound)
-  availability(
+  getCourtAvailability(
     @Param() { id }: IdParamDto,
     @Query() { date }: DayQueryDto,
     @CurrentUser() user: SessionUser
@@ -84,7 +84,7 @@ export class CourtsController {
   @ApiCreatedResponse({ type: CourtDto })
   @ApiBadRequestResponse(badRequest)
   @ApiForbiddenResponse(forbidden)
-  create(@Body() body: CreateCourtDto): Promise<CourtDto> {
+  createCourt(@Body() body: CreateCourtDto): Promise<CourtDto> {
     return this.courts.create(body);
   }
 
@@ -109,7 +109,7 @@ export class CourtsController {
       { count: 1, lastEndsAt: '2026-11-20T22:00:00.000Z' }
     )
   )
-  update(@Param() { id }: IdParamDto, @Body() body: UpdateCourtDto): Promise<CourtDto> {
+  updateCourt(@Param() { id }: IdParamDto, @Body() body: UpdateCourtDto): Promise<CourtDto> {
     return this.courts.update(id, body);
   }
 }

@@ -71,7 +71,7 @@ export class AuthController {
   })
   @ApiOkResponse({ type: UserDto })
   @ApiUnauthorizedResponse(errorResponse(401, 'UNAUTHENTICATED', 'Please log in'))
-  me(@CurrentUser() user: SessionUser): Promise<UserDto> {
+  getMe(@CurrentUser() user: SessionUser): Promise<UserDto> {
     return this.auth.getUser(user.id);
   }
 

@@ -13,13 +13,21 @@ and a Next.js web app (`apps/web`). TypeScript strict everywhere. pnpm workspace
 - `docker compose up --build` — the whole stack: PostgreSQL, migrations + seed, API on port 4000
   (stop the local API dev server first, it uses the same port); `docker compose down -v` deletes the data,
   including the local development database (same volume)
-- `docker compose up -d db` — only PostgreSQL on port 5434, for local development
+- `docker compose up -d --wait db` — only PostgreSQL on port 5434, for local development
+  (`--wait` returns once it is healthy)
 - `pnpm --filter @courtly/api dev` — API in watch mode (copy `apps/api/.env.example` to `apps/api/.env` first)
 - `pnpm --filter @courtly/api db:migrate --create-only --name <name>` — create a migration, review the SQL,
   then run `pnpm --filter @courtly/api db:migrate` to apply it
 - `pnpm --filter @courtly/api db:generate` — regenerate the Prisma client after a schema change
   (Prisma 7 `migrate dev` no longer does it)
 - `pnpm --filter @courtly/api db:seed` — add demo data (safe to run again; password `courtly-demo`)
+- `pnpm --filter @courtly/web dev` — web app on port 3000; it proxies `/api/*` to the API dev server on port 4000
+- `pnpm api:generate` — after an API contract change: writes `apps/api/openapi.json` (commit it; CI fails if it is
+  out of date) and regenerates the Orval client in `apps/web/src/shared/api/generated` (gitignored)
+- `pnpm --filter @courtly/web api:generate` — rebuild only the Orval client from the committed `openapi.json`
+  (after a pull; `pnpm install` runs it only on the first install or when dependencies change)
+- `pnpm --filter @courtly/web exec shadcn add <name>` — add a shadcn/ui component to `src/shared/ui`, then
+  `pnpm format`; if it imports `lucide-react`, add that package too (the CLI doesn't)
 
 Keep this list in sync when you add a script.
 
@@ -77,6 +85,9 @@ Keep this list in sync when you add a script.
   - `features/<name>` — business functionality with interactive UI: containers, hooks, UI.
   - `entities/<name>` — domain helpers (formatters, mapping); no UI.
   - `shared` — API layer (Orval output + fetcher), base UI primitives, utilities; no business logic.
+  - `shared/ui` is shadcn/ui code added with the CLI (`components.json` points it there). It keeps shadcn's style
+    (function declarations, `import * as React`) so later `shadcn add` updates apply cleanly; the rest of the code
+    follows the rules below. Change the look through theme tokens in `globals.css`.
 - Features never import each other. Feature-specific loading, error and empty states live in the feature.
 - A new page is `src/app/<route>/page.tsx` + `features/<feature>/containers/<Name>Page.tsx`.
   No placeholder UI, fake data or mocks before the API contract exists.
@@ -86,7 +97,7 @@ Keep this list in sync when you add a script.
 - Generated Orval hooks and schemas are the source of truth for request and response shapes.
 - Do not hand-write parallel DTOs that rename the same fields. Import the generated types.
 - A view model is fine only when the UI needs a different shape. Map at the boundary.
-- Never edit generated files. Regenerate them with the Orval script.
+- Never edit generated files. Regenerate them with `pnpm api:generate`.
 
 ### Components and hooks
 
@@ -100,11 +111,19 @@ Keep this list in sync when you add a script.
 - To choose between different pieces of UI, use a helper with early `return` / `switch`,
   or a small presentational component that takes the decision as a prop.
 
+### Forms
+
+- react-hook-form with a yup schema that lives in the feature and mirrors the API DTO rules
+  (`ObjectSchema<GeneratedDto>`). `noValidate` on the form, so the browser shows no popups of its own.
+- Each field shows its error in red right under it, in a line that is always rendered (`min-h-5`), so the layout
+  doesn't jump. Link it with `aria-describedby` and set `aria-invalid` on the input.
+
 ### Styling
 
 - Tailwind CSS 4 with theme tokens. No hard-coded hex or rgba when a token exists.
   A new token goes into the theme, not into inline styles.
-- Conditional class names with `clsx` only. No ternaries inside className strings.
+- Conditional class names with `cn` (from the `cn` package, as in the shadcn components) only.
+  No ternaries inside className strings.
 - Show times in the facility time zone (from the API), never the browser's.
 
 ## Tests

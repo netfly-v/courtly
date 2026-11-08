@@ -1,0 +1,1785 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "description": "Public, no login needed. Answers 503 when the database is not reachable.",
+        "operationId": "checkHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "code": "SERVICE_UNAVAILABLE",
+                  "message": "Database is not reachable"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Check that the API and the database are up",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/facility": {
+      "get": {
+        "description": "Show every time in this time zone, not in the browser one. Users can book days from today up to today + bookingDaysAhead.",
+        "operationId": "getFacility",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacilityDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Get the facility time zone and booking horizon",
+        "tags": [
+          "facility"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "description": "Public. Sets an httpOnly session cookie for 8 hours and returns the user.",
+        "operationId": "login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "code": "VALIDATION_FAILED",
+                  "message": "Some fields are not valid",
+                  "details": {
+                    "email": [
+                      "email must be a valid email address"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "INVALID_CREDENTIALS",
+                  "message": "Wrong email or password"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Log in with email and password",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "description": "Public, so a user with an expired session can still log out.",
+        "operationId": "logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Clears the session cookie"
+          }
+        },
+        "summary": "Log out",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "description": "Reads the user from the session cookie. Use it to find out who is logged in and with which role.",
+        "operationId": "getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Get the logged-in user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/courts": {
+      "get": {
+        "description": "Users get active courts only. Admins get all courts, including turned-off ones.",
+        "operationId": "listCourts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CourtDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "List courts",
+        "tags": [
+          "courts"
+        ]
+      },
+      "post": {
+        "description": "Admin only. A new court is active and takes bookings right away.",
+        "operationId": "createCourt",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCourtDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourtDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "code": "VALIDATION_FAILED",
+                  "message": "Some fields are not valid",
+                  "details": {
+                    "closeHour": [
+                      "closeHour must be later than openHour"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "code": "FORBIDDEN",
+                  "message": "You are not allowed to do this"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Add a court",
+        "tags": [
+          "courts"
+        ]
+      }
+    },
+    "/api/courts/{id}": {
+      "get": {
+        "description": "Users get 404 for a turned-off court. Admins can still open it.",
+        "operationId": "getCourt",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourtDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "code": "COURT_NOT_FOUND",
+                  "message": "Court not found"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Get one court",
+        "tags": [
+          "courts"
+        ]
+      },
+      "patch": {
+        "description": "Admin only. Send only the fields you want to change. A turned-off court keeps its bookings but takes no new ones. New opening hours must still fit every upcoming booking.",
+        "operationId": "updateCourt",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCourtDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourtDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "code": "VALIDATION_FAILED",
+                  "message": "Some fields are not valid",
+                  "details": {
+                    "closeHour": [
+                      "closeHour must be later than openHour"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "code": "FORBIDDEN",
+                  "message": "You are not allowed to do this"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "code": "COURT_NOT_FOUND",
+                  "message": "Court not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "code": "COURT_HAS_BOOKINGS_OUTSIDE_HOURS",
+                  "message": "Some upcoming bookings fall outside the new opening hours",
+                  "details": {
+                    "count": 1,
+                    "lastEndsAt": "2026-11-20T22:00:00.000Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Change a court or turn it off",
+        "tags": [
+          "courts"
+        ]
+      }
+    },
+    "/api/courts/{id}/availability": {
+      "get": {
+        "description": "One-hour slots from opening to closing on a day in the facility time zone. Each slot is AVAILABLE, BOOKED or PAST, and bookedByMe marks your own bookings.",
+        "operationId": "getCourtAvailability",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "description": "A day in the facility time zone",
+            "schema": {
+              "example": "2026-11-09",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "code": "VALIDATION_FAILED",
+                  "message": "Some fields are not valid",
+                  "details": {
+                    "date": [
+                      "date must be a real calendar day"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "code": "COURT_NOT_FOUND",
+                  "message": "Court not found"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Get the slots of a court for one day",
+        "tags": [
+          "courts"
+        ]
+      }
+    },
+    "/api/bookings": {
+      "post": {
+        "description": "Users only, admins get 403. The start must be on the hour, in the future, inside opening hours and on a day no later than today + 30 in the facility time zone. The price is fixed when the booking is made.",
+        "operationId": "createBooking",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "code": "VALIDATION_FAILED",
+                  "message": "Some fields are not valid",
+                  "details": {
+                    "durationHours": [
+                      "durationHours must be 1 or 2"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "code": "FORBIDDEN",
+                  "message": "You are not allowed to do this"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "code": "COURT_NOT_FOUND",
+                  "message": "Court not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "code": "SLOT_TAKEN",
+                  "message": "This time has just been booked"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "COURT_INACTIVE, SLOT_NOT_ALIGNED, BOOKING_IN_PAST, BOOKING_TOO_FAR_AHEAD, OUTSIDE_OPENING_HOURS",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "examples": {
+                  "COURT_INACTIVE": {
+                    "summary": "COURT_INACTIVE",
+                    "value": {
+                      "statusCode": 422,
+                      "code": "COURT_INACTIVE",
+                      "message": "This court is not taking new bookings"
+                    }
+                  },
+                  "SLOT_NOT_ALIGNED": {
+                    "summary": "SLOT_NOT_ALIGNED",
+                    "value": {
+                      "statusCode": 422,
+                      "code": "SLOT_NOT_ALIGNED",
+                      "message": "Bookings start on the hour"
+                    }
+                  },
+                  "BOOKING_IN_PAST": {
+                    "summary": "BOOKING_IN_PAST",
+                    "value": {
+                      "statusCode": 422,
+                      "code": "BOOKING_IN_PAST",
+                      "message": "This time has already started"
+                    }
+                  },
+                  "BOOKING_TOO_FAR_AHEAD": {
+                    "summary": "BOOKING_TOO_FAR_AHEAD",
+                    "value": {
+                      "statusCode": 422,
+                      "code": "BOOKING_TOO_FAR_AHEAD",
+                      "message": "Bookings open 30 days ahead"
+                    }
+                  },
+                  "OUTSIDE_OPENING_HOURS": {
+                    "summary": "OUTSIDE_OPENING_HOURS",
+                    "value": {
+                      "statusCode": 422,
+                      "code": "OUTSIDE_OPENING_HOURS",
+                      "message": "The court is closed at this time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Book a court for 1 or 2 hours",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/bookings/me": {
+      "get": {
+        "description": "upcoming: not ended yet (in progress too), soonest first. past: ended, latest first. Cancelled bookings stay in both lists.",
+        "operationId": "listMyBookings",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "upcoming: not ended yet, past: ended. Both include cancelled bookings.",
+            "schema": {
+              "default": "upcoming",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/BookingScope"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "code": "FORBIDDEN",
+                  "message": "You are not allowed to do this"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "List my upcoming or past bookings",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/bookings/{id}/cancel": {
+      "post": {
+        "description": "Possible until 2 hours before the start, including that exact moment. The booking stays in the lists as CANCELLED. A booking of another user gives 404.",
+        "operationId": "cancelBooking",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "code": "FORBIDDEN",
+                  "message": "You are not allowed to do this"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "code": "BOOKING_NOT_FOUND",
+                  "message": "Booking not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "code": "BOOKING_ALREADY_CANCELLED",
+                  "message": "Already cancelled"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 422,
+                  "code": "CANCELLATION_WINDOW_CLOSED",
+                  "message": "Bookings can be cancelled up to 2 hours before the start",
+                  "details": {
+                    "cancellableUntil": "2026-11-10T08:00:00.000Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Cancel my booking",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/admin/bookings": {
+      "get": {
+        "description": "Admin only. Bookings that start on this day in the facility time zone, turned-off courts included, earliest first, then by court name. Cancelled bookings are listed but not part of the revenue.",
+        "operationId": "listDayBookings",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "description": "A day in the facility time zone",
+            "schema": {
+              "example": "2026-11-09",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDayDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "code": "VALIDATION_FAILED",
+                  "message": "Some fields are not valid",
+                  "details": {
+                    "date": [
+                      "date must be a real calendar day"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "code": "FORBIDDEN",
+                  "message": "You are not allowed to do this"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "List all bookings of a day with the revenue",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/courts": {
+      "get": {
+        "description": "Admin only. All courts, turned-off ones included, sorted by name. To add or change a court, use POST /api/courts and PATCH /api/courts/{id}.",
+        "operationId": "listAdminCourts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminCourtDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "code": "UNAUTHENTICATED",
+                  "message": "Please log in"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "code": "FORBIDDEN",
+                  "message": "You are not allowed to do this"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "List courts with the number of upcoming bookings",
+        "tags": [
+          "admin"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Courtly API",
+    "description": "",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "cookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "courtly_session"
+      }
+    },
+    "schemas": {
+      "HealthResponseDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "ApiErrorDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number"
+          },
+          "code": {
+            "type": "string",
+            "description": "Stable code for the client to check"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Extra data that depends on the code"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message"
+        ]
+      },
+      "FacilityDto": {
+        "type": "object",
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "example": "Europe/Lisbon",
+            "description": "IANA time zone of the facility; show every time in it"
+          },
+          "bookingDaysAhead": {
+            "type": "integer",
+            "example": 30,
+            "description": "Last bookable day is today + this"
+          }
+        },
+        "required": [
+          "timezone",
+          "bookingDaysAhead"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "admin@courtly.dev"
+          },
+          "password": {
+            "type": "string",
+            "example": "courtly-demo"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "Role": {
+        "type": "string",
+        "enum": [
+          "USER",
+          "ADMIN"
+        ]
+      },
+      "UserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "example": "admin@courtly.dev"
+          },
+          "name": {
+            "type": "string",
+            "example": "Vitalii"
+          },
+          "role": {
+            "example": "ADMIN",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Role"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role"
+        ]
+      },
+      "Sport": {
+        "type": "string",
+        "enum": [
+          "PADEL",
+          "TENNIS",
+          "SQUASH",
+          "PICKLEBALL",
+          "BADMINTON"
+        ]
+      },
+      "CourtDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Padel 1"
+          },
+          "sport": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sport"
+              }
+            ]
+          },
+          "hourlyPriceCents": {
+            "type": "integer",
+            "example": 2400,
+            "description": "Price per hour in cents"
+          },
+          "openHour": {
+            "type": "integer",
+            "example": 8,
+            "description": "Opening hour in the facility time zone"
+          },
+          "closeHour": {
+            "type": "integer",
+            "example": 23,
+            "description": "Closing hour in the facility time zone, 24 is midnight"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Users see only active courts"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sport",
+          "hourlyPriceCents",
+          "openHour",
+          "closeHour",
+          "isActive"
+        ]
+      },
+      "SlotStatus": {
+        "type": "string",
+        "enum": [
+          "AVAILABLE",
+          "BOOKED",
+          "PAST"
+        ]
+      },
+      "SlotDto": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-09T10:00:00.000Z"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-09T11:00:00.000Z"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SlotStatus"
+              }
+            ]
+          },
+          "bookedByMe": {
+            "type": "boolean",
+            "description": "The slot is part of your own booking"
+          }
+        },
+        "required": [
+          "startsAt",
+          "endsAt",
+          "status",
+          "bookedByMe"
+        ]
+      },
+      "AvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "court": {
+            "$ref": "#/components/schemas/CourtDto"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-11-09"
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SlotDto"
+            }
+          }
+        },
+        "required": [
+          "court",
+          "date",
+          "slots"
+        ]
+      },
+      "CreateCourtDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Padel 3",
+            "maxLength": 60
+          },
+          "sport": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sport"
+              }
+            ]
+          },
+          "hourlyPriceCents": {
+            "type": "integer",
+            "example": 2400,
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Price per hour in cents"
+          },
+          "openHour": {
+            "type": "integer",
+            "example": 8,
+            "minimum": 0,
+            "maximum": 23
+          },
+          "closeHour": {
+            "type": "integer",
+            "example": 23,
+            "minimum": 1,
+            "maximum": 24,
+            "description": "Must be later than openHour, 24 is midnight"
+          }
+        },
+        "required": [
+          "name",
+          "sport",
+          "hourlyPriceCents",
+          "openHour",
+          "closeHour"
+        ]
+      },
+      "UpdateCourtDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Padel 3",
+            "maxLength": 60
+          },
+          "sport": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sport"
+              }
+            ]
+          },
+          "hourlyPriceCents": {
+            "type": "integer",
+            "example": 2400,
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Price per hour in cents"
+          },
+          "openHour": {
+            "type": "integer",
+            "example": 8,
+            "minimum": 0,
+            "maximum": 23
+          },
+          "closeHour": {
+            "type": "integer",
+            "example": 23,
+            "minimum": 1,
+            "maximum": 24,
+            "description": "Must be later than openHour, 24 is midnight"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "false hides the court from users"
+          }
+        }
+      },
+      "CreateBookingDto": {
+        "type": "object",
+        "properties": {
+          "courtId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startsAt": {
+            "type": "string",
+            "example": "2026-11-10T10:00:00.000Z",
+            "description": "startsAt of a slot from the availability endpoint"
+          },
+          "durationHours": {
+            "type": "integer",
+            "enum": [
+              1,
+              2
+            ]
+          }
+        },
+        "required": [
+          "courtId",
+          "startsAt",
+          "durationHours"
+        ]
+      },
+      "BookingCourtDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Padel 1"
+          },
+          "sport": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sport"
+              }
+            ]
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "An inactive court keeps its bookings but takes no new ones"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sport",
+          "isActive"
+        ]
+      },
+      "BookingStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "CANCELLED"
+        ]
+      },
+      "BookingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "court": {
+            "$ref": "#/components/schemas/BookingCourtDto"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-10T10:00:00.000Z"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-10T12:00:00.000Z"
+          },
+          "totalPriceCents": {
+            "type": "integer",
+            "example": 4800,
+            "description": "Price at the time of booking"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BookingStatus"
+              }
+            ]
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "cancellableUntil": {
+            "type": "string",
+            "format": "date-time",
+            "description": "An active booking can be cancelled up to and including this time"
+          }
+        },
+        "required": [
+          "id",
+          "court",
+          "startsAt",
+          "endsAt",
+          "totalPriceCents",
+          "status",
+          "cancelledAt",
+          "cancellableUntil"
+        ]
+      },
+      "BookingScope": {
+        "type": "string",
+        "enum": [
+          "upcoming",
+          "past"
+        ]
+      },
+      "BookingUserDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Anna Silva"
+          },
+          "email": {
+            "type": "string",
+            "example": "anna@courtly.dev"
+          }
+        },
+        "required": [
+          "name",
+          "email"
+        ]
+      },
+      "AdminBookingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "court": {
+            "$ref": "#/components/schemas/BookingCourtDto"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-10T10:00:00.000Z"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-10T12:00:00.000Z"
+          },
+          "totalPriceCents": {
+            "type": "integer",
+            "example": 4800,
+            "description": "Price at the time of booking"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BookingStatus"
+              }
+            ]
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "user": {
+            "$ref": "#/components/schemas/BookingUserDto"
+          }
+        },
+        "required": [
+          "id",
+          "court",
+          "startsAt",
+          "endsAt",
+          "totalPriceCents",
+          "status",
+          "cancelledAt",
+          "user"
+        ]
+      },
+      "DayTotalsDto": {
+        "type": "object",
+        "properties": {
+          "activeCount": {
+            "type": "integer",
+            "example": 4
+          },
+          "cancelledCount": {
+            "type": "integer",
+            "example": 1
+          },
+          "revenueCents": {
+            "type": "integer",
+            "example": 9600,
+            "description": "Active bookings that start this day, past hours included, at their stored price"
+          }
+        },
+        "required": [
+          "activeCount",
+          "cancelledCount",
+          "revenueCents"
+        ]
+      },
+      "AdminDayDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-11-09",
+            "description": "A day in the facility time zone"
+          },
+          "bookings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminBookingDto"
+            }
+          },
+          "totals": {
+            "$ref": "#/components/schemas/DayTotalsDto"
+          }
+        },
+        "required": [
+          "date",
+          "bookings",
+          "totals"
+        ]
+      },
+      "AdminCourtDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Padel 1"
+          },
+          "sport": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sport"
+              }
+            ]
+          },
+          "hourlyPriceCents": {
+            "type": "integer",
+            "example": 2400,
+            "description": "Price per hour in cents"
+          },
+          "openHour": {
+            "type": "integer",
+            "example": 8,
+            "description": "Opening hour in the facility time zone"
+          },
+          "closeHour": {
+            "type": "integer",
+            "example": 23,
+            "description": "Closing hour in the facility time zone, 24 is midnight"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Users see only active courts"
+          },
+          "upcomingBookingsCount": {
+            "type": "integer",
+            "example": 3,
+            "description": "Active bookings that have not ended yet, in progress too. Turning the court off keeps them."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sport",
+          "hourlyPriceCents",
+          "openHour",
+          "closeHour",
+          "isActive",
+          "upcomingBookingsCount"
+        ]
+      }
+    }
+  }
+}

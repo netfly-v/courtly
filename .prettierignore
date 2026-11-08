@@ -1,1 +1,3 @@
 pnpm-lock.yaml
+# written by the API export script (JSON.stringify), never edited by hand
+apps/api/openapi.json

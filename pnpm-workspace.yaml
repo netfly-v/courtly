@@ -15,3 +15,5 @@ allowBuilds:
   protobufjs: false
   # tsx dep: only checks the platform binary, which pnpm already installs as an optional dependency
   esbuild: false
+  # copies the browser worker file into a configured folder; the web tests use msw/node only
+  msw: false

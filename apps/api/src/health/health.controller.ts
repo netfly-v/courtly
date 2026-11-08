@@ -25,7 +25,7 @@ export class HealthController {
   @ApiServiceUnavailableResponse(
     errorResponse(503, 'SERVICE_UNAVAILABLE', 'Database is not reachable')
   )
-  async check(): Promise<HealthResponseDto> {
+  async checkHealth(): Promise<HealthResponseDto> {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
     } catch {
