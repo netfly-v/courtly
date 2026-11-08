@@ -12,7 +12,7 @@ A comment stays only when the code cannot explain itself:
 
 - a non-obvious reason: why it is done this way, or why not the obvious alternative;
 - a workaround for a Nest, Prisma, class-transformer, Express, PostgreSQL, Next.js or jsdom limitation;
-- a trap for the next reader: an order that matters, a value that must match another file, a default that silently changes behaviour, the security reason behind an option, a rule that lives only in raw SQL.
+- a trap for the next reader: an order that matters, a value that must match another file, a default that silently changes behaviour, the security reason behind an unusual option, a rule that lives only in raw SQL.
 
 Remove a comment when it:
 
@@ -20,9 +20,12 @@ Remove a comment when it:
 - narrates test steps ("log in", "call the endpoint", "check the body") or retells the test name;
 - is a JSDoc or a `///` doc that only repeats the class, field, endpoint or function name;
 - explains a standard Nest, Prisma or project pattern that other files use without a comment (DI in a constructor, a DTO decorator, `@Public()`);
+- explains basics a mid-level developer already knows: what `httpOnly`, `SameSite` or `timingSafeEqual` do, what `APP_GUARD` or a DI token is, why an upsert makes a seed safe to rerun;
 - no longer matches the code.
 
 Shorten a comment that is needed but long: one short line where possible, two at most. A line fits in 100 characters (Prettier's `printWidth`; Prettier does not wrap comments). English, short plain words.
+
+The test for every comment: would the next developer get it wrong, or "fix" it into a bug, without this comment? If not, remove it. Avoid giving every comment the same shape ("X, so Y").
 
 Match the density of the surrounding file. If similar code in the file or in a sibling module has no comment, a new comment needs a strong reason.
 

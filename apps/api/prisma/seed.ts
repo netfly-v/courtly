@@ -11,7 +11,6 @@ const users = [
   { email: 'ben@courtly.dev', name: 'Ben Costa', role: Role.USER },
 ];
 
-// Fixed ids, so a second run finds the same courts instead of adding new ones.
 const courts = [
   {
     id: '218c2796-edf8-4397-8c69-e91eadd471e4',

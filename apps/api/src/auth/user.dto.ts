@@ -15,7 +15,7 @@ export class UserDto {
   role: Role;
 }
 
-// Picks fields one by one, so a new column (or the password hash) never leaks by accident.
+// No spread: the UserDto return type still accepts a whole User, passwordHash included.
 export const toUserDto = (user: User): UserDto => ({
   id: user.id,
   email: user.email,

@@ -3,7 +3,6 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestApp } from './test-app.js';
 
-// The message comes from Nest, so only the shape and the code are ours to pin.
 const envelope = (statusCode: number, code: string) => ({
   statusCode,
   code,

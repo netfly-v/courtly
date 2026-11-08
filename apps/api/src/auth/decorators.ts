@@ -5,7 +5,6 @@ import type { SessionRequest } from './session.js';
 export const IS_PUBLIC = 'isPublic';
 export const ROLES = 'roles';
 
-// Every route needs a session by default; this opts one route or controller out.
 export const Public = () => SetMetadata(IS_PUBLIC, true);
 
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES, roles);

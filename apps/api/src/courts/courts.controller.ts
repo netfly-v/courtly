@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCookieAuth,
@@ -14,6 +14,7 @@ import type { SessionUser } from '../auth/session.js';
 import { errorResponse } from '../common/api-error.dto.js';
 import { IdParamDto } from '../common/id-param.dto.js';
 import { Role } from '../generated/prisma/client.js';
+import { AvailabilityDto, AvailabilityQueryDto } from './availability.dto.js';
 import { CourtDto } from './court.dto.js';
 import { CourtsService } from './courts.service.js';
 import { CreateCourtDto } from './create-court.dto.js';
@@ -43,6 +44,22 @@ export class CourtsController {
   @ApiNotFoundResponse({ ...notFound, description: 'Also for an inactive court, unless admin' })
   get(@Param() { id }: IdParamDto, @CurrentUser() user: SessionUser): Promise<CourtDto> {
     return this.courts.get(id, user);
+  }
+
+  @Get(':id/availability')
+  @ApiOkResponse({ type: AvailabilityDto, description: 'One-hour slots of the day' })
+  @ApiBadRequestResponse(
+    errorResponse(400, 'VALIDATION_FAILED', 'Some fields are not valid', {
+      date: ['date must be a real calendar day'],
+    })
+  )
+  @ApiNotFoundResponse(notFound)
+  availability(
+    @Param() { id }: IdParamDto,
+    @Query() { date }: AvailabilityQueryDto,
+    @CurrentUser() user: SessionUser
+  ): Promise<AvailabilityDto> {
+    return this.courts.availability(id, date, user);
   }
 
   @Post()

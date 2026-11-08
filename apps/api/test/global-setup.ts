@@ -9,7 +9,6 @@ declare module 'vitest' {
 }
 
 export default async (project: TestProject) => {
-  // Same image as compose.yaml, so tests run on the database version we ship.
   const container = await new PostgreSqlContainer('postgres:18-alpine').start();
   const databaseUrl = container.getConnectionUri();
 

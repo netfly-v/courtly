@@ -52,7 +52,6 @@ describe('booking constraints', () => {
     await pool.query('DELETE FROM bookings WHERE court_id IN ($1, $2)', [courtId, otherCourtId]);
   });
 
-  // All test files share one database, and in watch mode it lives between reruns.
   afterAll(async () => {
     await pool.query('DELETE FROM courts WHERE id IN ($1, $2)', [courtId, otherCourtId]);
     await pool.query('DELETE FROM users WHERE id = $1', [userId]);

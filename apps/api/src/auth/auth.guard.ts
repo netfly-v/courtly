@@ -12,7 +12,7 @@ import {
   type SessionUser,
 } from './session.js';
 
-// One guard for the session and the role, so the role check always runs after the session check.
+// One guard for session and role: the role check must always run after the session check.
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(

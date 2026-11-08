@@ -21,7 +21,6 @@ const newCourt = {
 
 const courtNotFound = { statusCode: 404, code: 'COURT_NOT_FOUND', message: 'Court not found' };
 
-// Field messages come from class-validator, so only the code and the field names are pinned.
 const invalidFields = (body: unknown) => {
   const { code, details } = body as ApiErrorDto;
   return { code, fields: Object.keys(details ?? {}).sort() };

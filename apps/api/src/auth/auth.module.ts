@@ -21,10 +21,6 @@ import { SESSION_TTL_SECONDS } from './session.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    // APP_GUARD runs the guard on every route of the app, not only on this module.
-    { provide: APP_GUARD, useClass: AuthGuard },
-  ],
+  providers: [AuthService, { provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AuthModule {}

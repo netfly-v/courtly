@@ -15,7 +15,6 @@ const deriveKey = (password: string, salt: Buffer, options: ScryptOptions, keyLe
     });
   });
 
-// The parameters are stored with the hash, so they can change later without breaking old passwords.
 export const hashPassword = async (password: string) => {
   const salt = randomBytes(16);
   const key = await deriveKey(password, salt, PARAMS, KEY_LENGTH);
@@ -31,6 +30,5 @@ export const verifyPassword = async (password: string, stored: string) => {
   const expected = Buffer.from(hash, 'base64');
   const options = { N: Number(N), r: Number(r), p: Number(p) };
   const actual = await deriveKey(password, Buffer.from(salt, 'base64'), options, expected.length);
-  // Constant-time compare, so response time doesn't leak how many bytes matched.
   return timingSafeEqual(actual, expected);
 };

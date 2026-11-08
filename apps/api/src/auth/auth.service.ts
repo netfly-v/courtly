@@ -15,7 +15,7 @@ export class AuthService {
 
   async login(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-    // Don't reveal which emails exist; the timing difference is an accepted trade-off.
+    // An unknown email skips scrypt and answers faster: an accepted timing leak.
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       throw new ApiError(HttpStatus.UNAUTHORIZED, 'INVALID_CREDENTIALS', 'Wrong email or password');
     }

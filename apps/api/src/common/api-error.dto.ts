@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-// No examples here: one schema serves every error, so each response sets its own example.
+// No examples here: one schema serves every error, each response sets its own example.
 export class ApiErrorDto {
   @ApiProperty()
   statusCode: number;

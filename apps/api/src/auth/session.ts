@@ -22,9 +22,7 @@ export interface SessionRequest extends Request {
 }
 
 export const sessionCookieOptions = (secure: boolean): CookieOptions => ({
-  // JavaScript can't read the cookie, so an XSS bug can't steal the session.
   httpOnly: true,
-  // Not sent with cross-site POSTs: basic CSRF protection.
   sameSite: 'lax',
   secure,
   path: '/',
