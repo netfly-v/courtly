@@ -1,3 +1,16 @@
+x-api: &api
+  build:
+    context: .
+    dockerfile: apps/api/Dockerfile
+  image: courtly-api
+  environment:
+    DATABASE_URL: postgresql://courtly:courtly@db:5432/courtly
+    # A demo secret for running on your own machine only. Never reuse it anywhere else.
+    JWT_SECRET: courtly-docker-demo-secret-0123456789abcdef
+    FACILITY_TIMEZONE: Europe/Lisbon
+    # Prisma's update notice suggests the 8.x release candidate, but the project stays on 7.x.
+    PRISMA_HIDE_UPDATE_MESSAGE: '1'
+
 services:
   db:
     image: postgres:18-alpine
@@ -17,6 +30,22 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+
+  # Runs on every `up` and exits; keep the seed safe to run again.
+  migrate:
+    <<: *api
+    command: sh -c 'pnpm exec prisma migrate deploy && pnpm exec prisma db seed'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *api
+    ports:
+      - '4000:4000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   pgdata:
