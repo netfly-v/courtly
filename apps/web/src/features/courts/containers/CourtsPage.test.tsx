@@ -1,8 +1,8 @@
 import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
-import { getListCourtsQueryKey } from '@/shared/api/generated';
-import type { CourtDto } from '@/shared/api/generated/model';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { getGetMeQueryKey, getListCourtsQueryKey } from '@/shared/api/generated';
+import type { CourtDto, UserDto } from '@/shared/api/generated/model';
 import { createQueryClient } from '@/shared/api/query-client';
 import { renderWithClient } from '@/test/render';
 import { server } from '@/test/server';
@@ -29,7 +29,21 @@ const courts: CourtDto[] = [
   },
 ];
 
+const user = (role: UserDto['role']): UserDto => ({
+  id: 'u1',
+  email: 'anna@courtly.dev',
+  name: 'Anna Silva',
+  role,
+});
+
 describe('CourtsPage', () => {
+  // Only admins get turned-off courts from the API.
+  beforeEach(() => {
+    server.use(
+      http.get<never, never, UserDto>('/api/auth/me', () => HttpResponse.json(user('ADMIN')))
+    );
+  });
+
   it('lists the courts with their sport, opening hours and price', async () => {
     server.use(http.get<never, never, CourtDto[]>('/api/courts', () => HttpResponse.json(courts)));
     renderWithClient(<CourtsPage />);
@@ -61,5 +75,22 @@ describe('CourtsPage', () => {
     renderWithClient(<CourtsPage />, client);
 
     expect(await screen.findByRole('heading', { name: 'Padel 1' })).toBeInTheDocument();
+  });
+
+  it.each([
+    ['a user', 'USER', '/courts/c1'],
+    ['an admin', 'ADMIN', undefined],
+  ] as const)('links a court to its booking page for %s', async (_who, role, href) => {
+    server.use(
+      http.get<never, never, UserDto>('/api/auth/me', () => HttpResponse.json(user(role))),
+      http.get<never, never, CourtDto[]>('/api/courts', () => HttpResponse.json([courts[0]!]))
+    );
+    // The login page puts the user into the cache, so the role is known on the first render.
+    const client = createQueryClient();
+    client.setQueryData(getGetMeQueryKey(), user(role));
+    renderWithClient(<CourtsPage />, client);
+
+    await screen.findByRole('heading', { name: 'Padel 1' });
+    expect(screen.queryByRole('link')?.getAttribute('href')).toBe(href);
   });
 });

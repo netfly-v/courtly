@@ -132,3 +132,6 @@ Keep this list in sync when you add a script.
 - Anything that depends on a database constraint runs against a real PostgreSQL (Testcontainers).
 - Freeze time through the `Clock`, never with real waits.
 - UI tests use React Testing Library queries by role and text, with MSW for API responses.
+- Web tests run in `TZ=America/New_York` with facility fixtures in Lisbon summer time (UTC+1), so a time shown in
+  the browser zone or in UTC fails. Freeze "now" with `vi.setSystemTime` (full fake timers stall React Query and
+  user-event). Assert what the user sees, not how many requests were sent.

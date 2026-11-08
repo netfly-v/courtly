@@ -1,11 +1,11 @@
 'use client';
 
 import { formatHourlyPrice, formatOpeningHours, formatSport } from '@/entities/court/format';
-import { useListCourts } from '@/shared/api/generated';
-import type { CourtDto } from '@/shared/api/generated/model';
+import { useGetMe, useListCourts } from '@/shared/api/generated';
+import { type CourtDto, Role } from '@/shared/api/generated/model';
 import { CourtCard } from '../ui/CourtCard';
 
-const renderCourts = (courts: CourtDto[] | undefined, failed: boolean) => {
+const renderCourts = (courts: CourtDto[] | undefined, failed: boolean, canBook: boolean) => {
   if (courts?.length === 0) {
     return <p className="text-muted-foreground">There are no courts yet.</p>;
   }
@@ -20,6 +20,7 @@ const renderCourts = (courts: CourtDto[] | undefined, failed: boolean) => {
               openingHours={formatOpeningHours(court.openHour, court.closeHour)}
               price={formatHourlyPrice(court.hourlyPriceCents)}
               badge={court.isActive ? undefined : 'Turned off'}
+              href={canBook ? `/courts/${court.id}` : undefined}
             />
           </li>
         ))}
@@ -38,11 +39,13 @@ const renderCourts = (courts: CourtDto[] | undefined, failed: boolean) => {
 
 export const CourtsPage = () => {
   const { data: courts, isError } = useListCourts();
+  const me = useGetMe();
+  const canBook = me.data?.role === Role.USER;
 
   return (
     <section className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">Courts</h1>
-      {renderCourts(courts, isError)}
+      {renderCourts(courts, isError, canBook)}
     </section>
   );
 };

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Badge } from '@/shared/ui/badge';
 import {
   Card,
@@ -14,9 +15,16 @@ interface CourtCardProps {
   openingHours: string;
   price: string;
   badge?: string;
+  href?: string;
 }
 
-export const CourtCard = ({ name, sport, openingHours, price, badge }: CourtCardProps) => (
+const CourtCardBody = ({
+  name,
+  sport,
+  openingHours,
+  price,
+  badge,
+}: Omit<CourtCardProps, 'href'>) => (
   <Card className="h-full">
     <CardHeader>
       <CardTitle>
@@ -35,3 +43,17 @@ export const CourtCard = ({ name, sport, openingHours, price, badge }: CourtCard
     </CardContent>
   </Card>
 );
+
+export const CourtCard = ({ href, ...court }: CourtCardProps) => {
+  if (!href) {
+    return <CourtCardBody {...court} />;
+  }
+  return (
+    <Link
+      href={href}
+      className="block h-full rounded-xl transition-shadow outline-none hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <CourtCardBody {...court} />
+    </Link>
+  );
+};
