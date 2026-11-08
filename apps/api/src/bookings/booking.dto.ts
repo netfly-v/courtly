@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { BookingStatus, type Prisma, Sport } from '../generated/prisma/client.js';
+import { BookingStatus, type Court, type Prisma, Sport } from '../generated/prisma/client.js';
 import { cancellableUntil } from './booking-rules.js';
 
 export class BookingCourtDto {
@@ -12,7 +12,7 @@ export class BookingCourtDto {
   @ApiProperty({ enum: Sport, enumName: 'Sport' })
   sport: Sport;
 
-  @ApiProperty({ description: 'An inactive court keeps its bookings but has no court page' })
+  @ApiProperty({ description: 'An inactive court keeps its bookings but takes no new ones' })
   isActive: boolean;
 }
 
@@ -45,16 +45,18 @@ export class BookingDto {
   cancellableUntil: string;
 }
 
+export const toBookingCourtDto = (court: Court): BookingCourtDto => ({
+  id: court.id,
+  name: court.name,
+  sport: court.sport,
+  isActive: court.isActive,
+});
+
 type BookingWithCourt = Prisma.BookingGetPayload<{ include: { court: true } }>;
 
 export const toBookingDto = (booking: BookingWithCourt): BookingDto => ({
   id: booking.id,
-  court: {
-    id: booking.court.id,
-    name: booking.court.name,
-    sport: booking.court.sport,
-    isActive: booking.court.isActive,
-  },
+  court: toBookingCourtDto(booking.court),
   startsAt: booking.startsAt.toISOString(),
   endsAt: booking.endsAt.toISOString(),
   totalPriceCents: booking.totalPriceCents,

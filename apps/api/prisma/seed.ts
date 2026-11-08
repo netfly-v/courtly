@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { hashPassword } from '../src/auth/password.js';
+import { cancellableUntil } from '../src/bookings/booking-rules.js';
 import { addDays, facilityDate, HOUR_MS, zonedInstant } from '../src/facility/facility-time.js';
 import { BookingStatus, PrismaClient, Role, Sport } from '../src/generated/prisma/client.js';
 
@@ -59,6 +60,11 @@ const courts = [padel1, padel2, tennisClay, tennisHard, pickleball];
 const bookings = [
   { email: 'anna@courtly.dev', court: padel1, day: -1, hour: 10, hours: 1 },
   { email: 'anna@courtly.dev', court: tennisClay, day: -2, hour: 18, hours: 2 },
+  { email: 'anna@courtly.dev', court: padel1, day: 0, hour: 9, hours: 1 },
+  { email: 'ben@courtly.dev', court: tennisClay, day: 0, hour: 18, hours: 2 },
+  { email: 'anna@courtly.dev', court: padel2, day: 0, hour: 19, hours: 1, cancelled: true },
+  // The cancelled slot above is free again, so someone else booked it.
+  { email: 'ben@courtly.dev', court: padel2, day: 0, hour: 19, hours: 1 },
   { email: 'anna@courtly.dev', court: padel1, day: 1, hour: 10, hours: 1 },
   { email: 'anna@courtly.dev', court: padel2, day: 1, hour: 19, hours: 2 },
   { email: 'anna@courtly.dev', court: tennisHard, day: 2, hour: 9, hours: 1, cancelled: true },
@@ -110,7 +116,11 @@ try {
             startsAt,
             endsAt: new Date(startsAt.getTime() + hours * HOUR_MS),
             totalPriceCents: court.hourlyPriceCents * hours,
-            ...(cancelled && { status: BookingStatus.CANCELLED, cancelledAt: now }),
+            ...(cancelled && {
+              status: BookingStatus.CANCELLED,
+              // Never later than the app allows, even when the seed runs late in the day.
+              cancelledAt: new Date(Math.min(now.getTime(), cancellableUntil(startsAt).getTime())),
+            }),
           },
         });
       })

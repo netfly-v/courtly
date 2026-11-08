@@ -39,6 +39,15 @@ describe('facilityDay', () => {
     expect(day.end.toISOString()).toBe('2030-06-03T23:00:00.000Z');
   });
 
+  it.each([
+    ['spring', '2030-03-31', '2030-03-31T00:00:00.000Z', '2030-03-31T23:00:00.000Z'],
+    ['autumn', '2030-10-27', '2030-10-26T23:00:00.000Z', '2030-10-28T00:00:00.000Z'],
+  ])('runs from midnight to midnight on the %s DST day', (_season, date, start, end) => {
+    const day = facilityDay(date, lisbon);
+
+    expect([day.start.toISOString(), day.end.toISOString()]).toEqual([start, end]);
+  });
+
   it('ends at the DST jump when the next midnight does not exist', () => {
     const day = facilityDay('2027-03-27', 'Atlantic/Azores');
     const [lastSlot] = openingSlots('2027-03-27', 'Atlantic/Azores', 23, 24);

@@ -14,9 +14,10 @@ import {
 import { CurrentUser, Roles } from '../auth/decorators.js';
 import type { SessionUser } from '../auth/session.js';
 import { errorResponse } from '../common/api-error.dto.js';
+import { DayQueryDto, invalidDayResponse } from '../common/day-query.dto.js';
 import { IdParamDto } from '../common/id-param.dto.js';
 import { Role } from '../generated/prisma/client.js';
-import { AvailabilityDto, AvailabilityQueryDto } from './availability.dto.js';
+import { AvailabilityDto } from './availability.dto.js';
 import { CourtDto } from './court.dto.js';
 import { CourtsService } from './courts.service.js';
 import { CreateCourtDto } from './create-court.dto.js';
@@ -64,15 +65,11 @@ export class CourtsController {
       'Each slot is AVAILABLE, BOOKED or PAST, and bookedByMe marks your own bookings.',
   })
   @ApiOkResponse({ type: AvailabilityDto })
-  @ApiBadRequestResponse(
-    errorResponse(400, 'VALIDATION_FAILED', 'Some fields are not valid', {
-      date: ['date must be a real calendar day'],
-    })
-  )
+  @ApiBadRequestResponse(invalidDayResponse)
   @ApiNotFoundResponse(notFound)
   availability(
     @Param() { id }: IdParamDto,
-    @Query() { date }: AvailabilityQueryDto,
+    @Query() { date }: DayQueryDto,
     @CurrentUser() user: SessionUser
   ): Promise<AvailabilityDto> {
     return this.courts.availability(id, date, user);
