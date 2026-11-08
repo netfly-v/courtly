@@ -25,3 +25,15 @@ export const errorResponse = (
   message: string,
   details?: Record<string, unknown>
 ) => ({ type: ApiErrorDto, example: { statusCode, code, message, details } });
+
+// Several codes under one status: stacked errorResponse() calls would keep only one example.
+export const errorResponses = (statusCode: number, messages: Record<string, string>) => ({
+  type: ApiErrorDto,
+  description: Object.keys(messages).join(', '),
+  examples: Object.fromEntries(
+    Object.entries(messages).map(([code, message]) => [
+      code,
+      { summary: code, value: { statusCode, code, message } },
+    ])
+  ),
+});

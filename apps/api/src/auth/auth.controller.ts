@@ -5,6 +5,7 @@ import {
   ApiCookieAuth,
   ApiNoContentResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -28,7 +29,11 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({ type: UserDto, description: 'Sets the session cookie' })
+  @ApiOperation({
+    summary: 'Log in with email and password',
+    description: 'Public. Sets an httpOnly session cookie for 8 hours and returns the user.',
+  })
+  @ApiOkResponse({ type: UserDto })
   @ApiBadRequestResponse(
     errorResponse(400, 'VALIDATION_FAILED', 'Some fields are not valid', {
       email: ['email must be a valid email address'],
@@ -47,6 +52,10 @@ export class AuthController {
   @Public()
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Log out',
+    description: 'Public, so a user with an expired session can still log out.',
+  })
   @ApiNoContentResponse({ description: 'Clears the session cookie' })
   logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie(SESSION_COOKIE, this.cookieOptions());
@@ -54,6 +63,12 @@ export class AuthController {
 
   @Get('me')
   @ApiCookieAuth()
+  @ApiOperation({
+    summary: 'Get the logged-in user',
+    description:
+      'Reads the user from the session cookie. ' +
+      'Use it to find out who is logged in and with which role.',
+  })
   @ApiOkResponse({ type: UserDto })
   @ApiUnauthorizedResponse(errorResponse(401, 'UNAUTHENTICATED', 'Please log in'))
   me(@CurrentUser() user: SessionUser): Promise<UserDto> {

@@ -1,11 +1,13 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -34,20 +36,34 @@ export class CourtsController {
   constructor(private readonly courts: CourtsService) {}
 
   @Get()
-  @ApiOkResponse({ type: [CourtDto], description: 'Users get active courts only' })
+  @ApiOperation({
+    summary: 'List courts',
+    description: 'Users get active courts only. Admins get all courts, including turned-off ones.',
+  })
+  @ApiOkResponse({ type: [CourtDto] })
   list(@CurrentUser() user: SessionUser): Promise<CourtDto[]> {
     return this.courts.list(user);
   }
 
   @Get(':id')
+  @ApiOperation({
+    summary: 'Get one court',
+    description: 'Users get 404 for a turned-off court. Admins can still open it.',
+  })
   @ApiOkResponse({ type: CourtDto })
-  @ApiNotFoundResponse({ ...notFound, description: 'Also for an inactive court, unless admin' })
+  @ApiNotFoundResponse(notFound)
   get(@Param() { id }: IdParamDto, @CurrentUser() user: SessionUser): Promise<CourtDto> {
     return this.courts.get(id, user);
   }
 
   @Get(':id/availability')
-  @ApiOkResponse({ type: AvailabilityDto, description: 'One-hour slots of the day' })
+  @ApiOperation({
+    summary: 'Get the slots of a court for one day',
+    description:
+      'One-hour slots from opening to closing on a day in the facility time zone. ' +
+      'Each slot is AVAILABLE, BOOKED or PAST, and bookedByMe marks your own bookings.',
+  })
+  @ApiOkResponse({ type: AvailabilityDto })
   @ApiBadRequestResponse(
     errorResponse(400, 'VALIDATION_FAILED', 'Some fields are not valid', {
       date: ['date must be a real calendar day'],
@@ -64,6 +80,10 @@ export class CourtsController {
 
   @Post()
   @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Add a court',
+    description: 'Admin only. A new court is active and takes bookings right away.',
+  })
   @ApiCreatedResponse({ type: CourtDto })
   @ApiBadRequestResponse(badRequest)
   @ApiForbiddenResponse(forbidden)
@@ -73,10 +93,25 @@ export class CourtsController {
 
   @Patch(':id')
   @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Change a court or turn it off',
+    description:
+      'Admin only. Send only the fields you want to change. ' +
+      'A turned-off court keeps its bookings but takes no new ones. ' +
+      'New opening hours must still fit every upcoming booking.',
+  })
   @ApiOkResponse({ type: CourtDto })
   @ApiBadRequestResponse(badRequest)
   @ApiForbiddenResponse(forbidden)
   @ApiNotFoundResponse(notFound)
+  @ApiConflictResponse(
+    errorResponse(
+      409,
+      'COURT_HAS_BOOKINGS_OUTSIDE_HOURS',
+      'Some upcoming bookings fall outside the new opening hours',
+      { count: 1, lastEndsAt: '2026-11-20T22:00:00.000Z' }
+    )
+  )
   update(@Param() { id }: IdParamDto, @Body() body: UpdateCourtDto): Promise<CourtDto> {
     return this.courts.update(id, body);
   }

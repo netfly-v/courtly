@@ -25,7 +25,8 @@ Keep this list in sync when you add a script.
 - Small steps. The maintainer reviews every change and makes all commits.
   Never run `git commit` or `git push`.
 - Follow the patterns already in the codebase. Find the closest example and mirror it.
-- Before handing a step over, run the `comment-reviewer` and `test-reviewer` agents from `.claude/agents/`.
+- Before handing a step over, run the `comment-reviewer` and `test-reviewer` agents from `.claude/agents/`
+  as the last step, on the finished diff. If the code changes after that, run them again on the changed files.
 - Nothing "for the future": no empty folders or files, no stubs, no types or config without a real consumer.
 - Pin versions on purpose. Prisma stays on 7.x (npm `latest` is a Prisma 8 release candidate).
   TypeScript stays on 6.x.
@@ -52,6 +53,8 @@ Keep this list in sync when you add a script.
 - Never call `new Date()` in business code. Inject the `Clock` so tests can freeze time.
 - Rules that must hold under concurrency live in the database (constraints).
   Do not add a "check, then insert" guard in code as protection; insert and handle the constraint error.
+- Code that creates a booking first locks the court row (`FOR NO KEY UPDATE`): without it parallel inserts
+  can deadlock on the EXCLUDE constraint, and a change of opening hours could slip past the check.
 - Migrations: `prisma migrate dev --create-only`, then read the SQL before applying.
   Raw SQL constraints (EXCLUDE, CHECK) live in migrations; never drop them by accident.
   Tests and Docker use `prisma migrate deploy`, never `db push`.

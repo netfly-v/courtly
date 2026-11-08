@@ -4,13 +4,15 @@ import type { SessionUser } from '../auth/session.js';
 import { Clock } from '../clock/clock.js';
 import { ApiError } from '../common/api-error.js';
 import type { Environment } from '../config/environment.js';
-import { BookingStatus, type Prisma, Role } from '../generated/prisma/client.js';
+import { fitsOpeningHours } from '../bookings/booking-rules.js';
+import { facilityDay } from '../facility/facility-time.js';
+import { BookingStatus, type Court, type Prisma, Role } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { isRecordNotFound, violatesConstraint } from '../prisma/prisma-errors.js';
 import { type AvailabilityDto, toSlotDto } from './availability.dto.js';
 import { type CourtDto, toCourtDto } from './court.dto.js';
 import type { CreateCourtDto } from './create-court.dto.js';
-import { buildSlots, facilityDay } from './slots.js';
+import { buildSlots } from './slots.js';
 import type { UpdateCourtDto } from './update-court.dto.js';
 
 // The DB checks openHour < closeHour, also against the stored hour when a PATCH sends only one.
@@ -85,7 +87,15 @@ export class CourtsService {
 
   async update(id: string, changes: UpdateCourtDto): Promise<CourtDto> {
     try {
-      return toCourtDto(await this.prisma.court.update({ where: { id }, data: changes }));
+      // UPDATE first: it waits for bookings that lock this row, and READ COMMITTED then lets
+      // the check below see them. Reading the bookings before the UPDATE would miss them.
+      return await this.prisma.$transaction(async tx => {
+        const court = await tx.court.update({ where: { id }, data: changes });
+        if (changes.openHour !== undefined || changes.closeHour !== undefined) {
+          await this.rejectBookingsOutsideHours(tx, court);
+        }
+        return toCourtDto(court);
+      });
     } catch (error) {
       if (isRecordNotFound(error)) {
         throw courtNotFound();
@@ -94,6 +104,26 @@ export class CourtsService {
         throw closesBeforeOpening();
       }
       throw error;
+    }
+  }
+
+  private async rejectBookingsOutsideHours(tx: Prisma.TransactionClient, court: Court) {
+    const timeZone = this.config.get('FACILITY_TIMEZONE', { infer: true });
+    const upcoming = await tx.booking.findMany({
+      where: { courtId: court.id, status: BookingStatus.ACTIVE, endsAt: { gt: this.clock.now() } },
+      select: { startsAt: true, endsAt: true },
+      orderBy: { endsAt: 'asc' },
+    });
+    const outside = upcoming.filter(
+      booking => !fitsOpeningHours(booking, court.openHour, court.closeHour, timeZone)
+    );
+    if (outside.length > 0) {
+      throw new ApiError(
+        HttpStatus.CONFLICT,
+        'COURT_HAS_BOOKINGS_OUTSIDE_HOURS',
+        'Some upcoming bookings fall outside the new opening hours',
+        { count: outside.length, lastEndsAt: outside.at(-1)?.endsAt.toISOString() }
+      );
     }
   }
 

@@ -4,12 +4,15 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ApiErrorDto } from '../src/common/api-error.dto.js';
 import type { CourtDto } from '../src/courts/court.dto.js';
-import { Role } from '../src/generated/prisma/client.js';
+import { BookingStatus, Role } from '../src/generated/prisma/client.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { createTestApp } from './test-app.js';
 import { createUser, loginAs } from './test-users.js';
 
 type Agent = Awaited<ReturnType<typeof loginAs>>;
+
+// 10:15 on 3 June 2030 in Lisbon (UTC+1).
+const now = new Date('2030-06-03T09:15:00Z');
 
 const newCourt = {
   name: 'Test Padel',
@@ -31,6 +34,7 @@ describe('courts', () => {
   let admin: Agent;
   let user: Agent;
   const createdUserIds: string[] = [];
+  let plainUserId = '';
   const createdCourtIds: string[] = [];
 
   const createCourt = async () => {
@@ -46,16 +50,18 @@ describe('courts', () => {
   };
 
   beforeAll(async () => {
-    app = await createTestApp();
+    app = await createTestApp({ now: () => now });
     const adminUser = await createUser(app, 'courts-admin@test.dev', Role.ADMIN);
     const plainUser = await createUser(app, 'courts-user@test.dev');
     createdUserIds.push(adminUser.id, plainUser.id);
+    plainUserId = plainUser.id;
     admin = await loginAs(app, adminUser.email);
     user = await loginAs(app, plainUser.email);
   });
 
   afterAll(async () => {
     const prisma = app.get(PrismaService);
+    await prisma.booking.deleteMany({ where: { courtId: { in: createdCourtIds } } });
     await prisma.court.deleteMany({ where: { id: { in: createdCourtIds } } });
     await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
     await app.close();
@@ -136,5 +142,38 @@ describe('courts', () => {
 
     const response = await user.get('/api/courts/not-a-uuid').expect(400);
     expect(invalidFields(response.body)).toEqual({ code: 'VALIDATION_FAILED', fields: ['id'] });
+  });
+
+  it('refuses new opening hours that would leave an upcoming booking outside them', async () => {
+    const court = await createCourt();
+    const insert = (from: string, to: string, status: BookingStatus = BookingStatus.ACTIVE) =>
+      app.get(PrismaService).booking.create({
+        data: {
+          userId: plainUserId,
+          courtId: court.id,
+          startsAt: new Date(from),
+          endsAt: new Date(to),
+          totalPriceCents: 2400,
+          status,
+        },
+      });
+    await insert('2030-06-02T07:00:00Z', '2030-06-02T08:00:00Z');
+    await insert('2030-06-04T08:00:00Z', '2030-06-04T09:00:00Z', BookingStatus.CANCELLED);
+    await insert('2030-06-04T11:00:00Z', '2030-06-04T12:00:00Z');
+    await insert('2030-06-05T10:00:00Z', '2030-06-05T11:00:00Z');
+    await insert('2030-06-03T09:00:00Z', '2030-06-03T10:00:00Z');
+
+    await admin.patch(`/api/courts/${court.id}`).send({ openHour: 10 }).expect(200);
+    await admin
+      .patch(`/api/courts/${court.id}`)
+      .send({ openHour: 13 })
+      .expect(409, {
+        statusCode: 409,
+        code: 'COURT_HAS_BOOKINGS_OUTSIDE_HOURS',
+        message: 'Some upcoming bookings fall outside the new opening hours',
+        details: { count: 3, lastEndsAt: '2030-06-05T11:00:00.000Z' },
+      });
+    const current = await admin.get(`/api/courts/${court.id}`).expect(200);
+    expect(current.body).toMatchObject({ openHour: 10 });
   });
 });
