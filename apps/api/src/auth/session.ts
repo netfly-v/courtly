@@ -1,16 +1,20 @@
 import { HttpStatus } from '@nestjs/common';
 import type { CookieOptions, Request } from 'express';
 import { ApiError } from '../common/api-error.js';
+import type { Role } from '../generated/prisma/client.js';
 
 export const SESSION_COOKIE = 'courtly_session';
 export const SESSION_TTL_SECONDS = 8 * 60 * 60;
 
+// The role is in the token, so a change applies after the next login (roles can't be edited).
 export interface SessionTokenPayload {
   sub: string;
+  role: Role;
 }
 
 export interface SessionUser {
   id: string;
+  role: Role;
 }
 
 export interface SessionRequest extends Request {

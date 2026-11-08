@@ -9,7 +9,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { ApiErrorDto } from '../common/api-error.dto.js';
+import { errorResponse } from '../common/api-error.dto.js';
 import type { Environment } from '../config/environment.js';
 import { AuthService } from './auth.service.js';
 import { CurrentUser, Public } from './decorators.js';
@@ -29,19 +29,12 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: UserDto, description: 'Sets the session cookie' })
-  @ApiBadRequestResponse({
-    type: ApiErrorDto,
-    example: {
-      statusCode: 400,
-      code: 'VALIDATION_FAILED',
-      message: 'Some fields are not valid',
-      details: { email: ['email must be a valid email address'] },
-    },
-  })
-  @ApiUnauthorizedResponse({
-    type: ApiErrorDto,
-    example: { statusCode: 401, code: 'INVALID_CREDENTIALS', message: 'Wrong email or password' },
-  })
+  @ApiBadRequestResponse(
+    errorResponse(400, 'VALIDATION_FAILED', 'Some fields are not valid', {
+      email: ['email must be a valid email address'],
+    })
+  )
+  @ApiUnauthorizedResponse(errorResponse(401, 'INVALID_CREDENTIALS', 'Wrong email or password'))
   async login(
     @Body() body: LoginDto,
     @Res({ passthrough: true }) response: Response
@@ -62,10 +55,7 @@ export class AuthController {
   @Get('me')
   @ApiCookieAuth()
   @ApiOkResponse({ type: UserDto })
-  @ApiUnauthorizedResponse({
-    type: ApiErrorDto,
-    example: { statusCode: 401, code: 'UNAUTHENTICATED', message: 'Please log in' },
-  })
+  @ApiUnauthorizedResponse(errorResponse(401, 'UNAUTHENTICATED', 'Please log in'))
   me(@CurrentUser() user: SessionUser): Promise<UserDto> {
     return this.auth.getUser(user.id);
   }

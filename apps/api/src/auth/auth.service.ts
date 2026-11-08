@@ -19,7 +19,7 @@ export class AuthService {
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       throw new ApiError(HttpStatus.UNAUTHORIZED, 'INVALID_CREDENTIALS', 'Wrong email or password');
     }
-    const payload: SessionTokenPayload = { sub: user.id };
+    const payload: SessionTokenPayload = { sub: user.id, role: user.role };
     return { token: await this.jwt.signAsync(payload), user: toUserDto(user) };
   }
 

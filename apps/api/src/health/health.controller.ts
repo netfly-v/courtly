@@ -1,7 +1,7 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiOkResponse, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '../auth/decorators.js';
-import { ApiErrorDto } from '../common/api-error.dto.js';
+import { errorResponse } from '../common/api-error.dto.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { HealthResponseDto } from './health-response.dto.js';
 
@@ -13,11 +13,9 @@ export class HealthController {
 
   @Get()
   @ApiOkResponse({ type: HealthResponseDto })
-  @ApiServiceUnavailableResponse({
-    type: ApiErrorDto,
-    description: 'The database is not reachable',
-    example: { statusCode: 503, code: 'SERVICE_UNAVAILABLE', message: 'Database is not reachable' },
-  })
+  @ApiServiceUnavailableResponse(
+    errorResponse(503, 'SERVICE_UNAVAILABLE', 'Database is not reachable')
+  )
   async check(): Promise<HealthResponseDto> {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
