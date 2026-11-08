@@ -12,6 +12,7 @@ import { Roles } from '../auth/decorators.js';
 import { errorResponse } from '../common/api-error.dto.js';
 import { DayQueryDto, invalidDayResponse } from '../common/day-query.dto.js';
 import { Role } from '../generated/prisma/client.js';
+import { AdminCourtDto } from './admin-court.dto.js';
 import { AdminDayDto } from './admin-day.dto.js';
 import { AdminService } from './admin.service.js';
 
@@ -36,5 +37,17 @@ export class AdminController {
   @ApiBadRequestResponse(invalidDayResponse)
   listDayBookings(@Query() { date }: DayQueryDto): Promise<AdminDayDto> {
     return this.admin.listDayBookings(date);
+  }
+
+  @Get('courts')
+  @ApiOperation({
+    summary: 'List courts with the number of upcoming bookings',
+    description:
+      'Admin only. All courts, turned-off ones included, sorted by name. ' +
+      'To add or change a court, use POST /api/courts and PATCH /api/courts/{id}.',
+  })
+  @ApiOkResponse({ type: [AdminCourtDto] })
+  listAdminCourts(): Promise<AdminCourtDto[]> {
+    return this.admin.listAdminCourts();
   }
 }

@@ -1,16 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Clock } from '../clock/clock.js';
 import type { Environment } from '../config/environment.js';
+import { toCourtDto } from '../courts/court.dto.js';
 import { facilityDay } from '../facility/facility-time.js';
 import { BookingStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import type { AdminCourtDto } from './admin-court.dto.js';
 import { type AdminDayDto, toAdminBookingDto } from './admin-day.dto.js';
 
 @Injectable()
 export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService<Environment, true>
+    private readonly config: ConfigService<Environment, true>,
+    private readonly clock: Clock
   ) {}
 
   async listDayBookings(date: string): Promise<AdminDayDto> {
@@ -36,5 +40,17 @@ export class AdminService {
         revenueCents: active.reduce((sum, booking) => sum + booking.totalPriceCents, 0),
       },
     };
+  }
+
+  async listAdminCourts(): Promise<AdminCourtDto[]> {
+    const upcoming = { status: BookingStatus.ACTIVE, endsAt: { gt: this.clock.now() } };
+    const courts = await this.prisma.court.findMany({
+      orderBy: { name: 'asc' },
+      include: { _count: { select: { bookings: { where: upcoming } } } },
+    });
+    return courts.map(court => ({
+      ...toCourtDto(court),
+      upcomingBookingsCount: court._count.bookings,
+    }));
   }
 }
