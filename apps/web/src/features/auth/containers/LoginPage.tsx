@@ -3,20 +3,13 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import type { ApiError } from '@/shared/api/fetcher';
 import { getGetMeQueryKey, useLogin } from '@/shared/api/generated';
 import { type LoginDto, Role } from '@/shared/api/generated/model';
 import { loginSchema } from '../login-schema';
 import { LoginForm } from '../ui/LoginForm';
-
-// Must match the demo users in apps/api/prisma/seed.ts.
-const DEMO_PASSWORD = 'courtly-demo';
-const DEMO_ACCOUNTS = [
-  { name: 'Anna Silva', initials: 'AS', email: 'anna@courtly.dev', role: 'User' },
-  { name: 'Ben Costa', initials: 'BC', email: 'ben@courtly.dev', role: 'User' },
-  { name: 'Vitalii', initials: 'V', email: 'admin@courtly.dev', role: 'Admin' },
-];
 
 const toErrorMessage = (error: ApiError | null) => {
   if (!error) {
@@ -39,26 +32,27 @@ export const LoginPage = () => {
   const login = useLogin({
     mutation: {
       onSuccess: user => {
-        queryClient.clear();
         queryClient.setQueryData(getGetMeQueryKey(), user);
         router.replace(user.role === Role.ADMIN ? '/admin' : '/');
       },
     },
   });
 
-  const logIn = (data: LoginDto) => login.mutate({ data });
   // Stays on while the page after login is loading, so nobody clicks twice.
   const pending = login.isPending || login.isSuccess;
+
+  // Every logout and ended session lands here; Back must not show the last user's data.
+  useEffect(() => {
+    queryClient.clear();
+  }, [queryClient]);
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <LoginForm
         form={form}
-        demoAccounts={DEMO_ACCOUNTS}
         error={toErrorMessage(login.error)}
         pending={pending}
-        onSubmit={logIn}
-        onDemoLogin={email => logIn({ email, password: DEMO_PASSWORD })}
+        onSubmit={data => login.mutate({ data })}
       />
     </main>
   );

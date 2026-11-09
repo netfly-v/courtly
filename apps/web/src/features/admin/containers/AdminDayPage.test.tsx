@@ -76,17 +76,17 @@ describe('AdminDayPage', () => {
       within(first!)
         .getAllByRole('cell')
         .map(cell => cell.textContent)
-    ).toEqual(['10:00–12:00', 'Padel 1', 'Anna Silvaanna@courtly.dev', '€48.00', 'Active']);
+    ).toEqual(['10:00–12:00', 'Active', 'Padel 1', 'Anna Silvaanna@courtly.dev', '€48.00']);
     expect(
       within(second!)
         .getAllByRole('cell')
         .map(cell => cell.textContent)
     ).toEqual([
       '13:00–14:00',
+      'Cancelled',
       'Padel 2Turned off',
       'Ben Costaben@courtly.dev',
       '€24.00',
-      'Cancelled',
     ]);
     expect(screen.getAllByRole('term').map(term => term.textContent)).toEqual([
       'Active bookings',

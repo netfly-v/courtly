@@ -36,11 +36,11 @@ export const CourtsTable = ({ courts, onEdit, onToggle }: CourtsTableProps) => (
       <TableRow>
         <TableHead>Name</TableHead>
         <TableHead>Sport</TableHead>
-        <TableHead>Opening hours</TableHead>
+        <TableHead className="whitespace-normal">Opening hours</TableHead>
         <TableHead>Price</TableHead>
-        <TableHead>Upcoming bookings</TableHead>
+        <TableHead className="whitespace-normal">Upcoming bookings</TableHead>
         <TableHead>Status</TableHead>
-        <TableHead>
+        <TableHead className="sticky right-0 bg-background">
           <span className="sr-only">Actions</span>
         </TableHead>
       </TableRow>
@@ -48,7 +48,7 @@ export const CourtsTable = ({ courts, onEdit, onToggle }: CourtsTableProps) => (
     <TableBody>
       {courts.map(court => (
         <TableRow key={court.id}>
-          <TableCell className="font-medium">{court.name}</TableCell>
+          <TableCell className="font-medium whitespace-normal">{court.name}</TableCell>
           <TableCell>{court.sport}</TableCell>
           <TableCell>{court.openingHours}</TableCell>
           <TableCell>{court.price}</TableCell>
@@ -61,7 +61,7 @@ export const CourtsTable = ({ courts, onEdit, onToggle }: CourtsTableProps) => (
               {court.status}
             </Badge>
           </TableCell>
-          <TableCell>
+          <TableCell className="sticky right-0 bg-background">
             <span className="flex justify-end gap-2">
               <Button
                 variant="outline"

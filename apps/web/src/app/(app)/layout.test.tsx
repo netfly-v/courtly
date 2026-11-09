@@ -2,9 +2,11 @@ import { configure, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { AdminCourtsPage } from '@/features/admin/containers/AdminCourtsPage';
 import { AdminDayPage } from '@/features/admin/containers/AdminDayPage';
 import { CourtBookingPage } from '@/features/bookings/containers/CourtBookingPage';
 import {
+  type AdminCourtDto,
   type AdminDayDto,
   type ApiErrorDto,
   type AvailabilityChangedEventDto,
@@ -269,6 +271,34 @@ describe('live updates', () => {
     stream().send({ courtId: 'c1', date: '2026-07-15' });
 
     expect(await screen.findByText('Ben Costa')).toBeInTheDocument();
+  });
+
+  it('updates the upcoming bookings count on the admin courts page after a live event', async () => {
+    const courtRow: AdminCourtDto = { ...court, upcomingBookingsCount: 2 };
+    server.use(
+      http.get<never, never, UserDto>('/api/auth/me', () =>
+        HttpResponse.json({ ...anna, name: 'Vitalii', role: 'ADMIN' })
+      ),
+      http.get<never, never, FacilityDto>('/api/facility', () => HttpResponse.json(facility)),
+      http.get<never, never, AdminCourtDto[]>('/api/admin/courts', () =>
+        HttpResponse.json([courtRow])
+      )
+    );
+    window.history.replaceState(null, '', '/admin/courts');
+    renderWithClient(
+      <AppLayout>
+        <AdminCourtsPage />
+      </AppLayout>
+    );
+    await screen.findByRole('row', { name: /^Padel 1/ });
+    stream().open();
+
+    courtRow.upcomingBookingsCount = 3;
+    stream().send({ courtId: 'c1', date: '2026-07-16' });
+
+    await waitFor(() =>
+      expect(within(screen.getByRole('row', { name: /^Padel 1/ })).getByText('3')).toBeVisible()
+    );
   });
 
   it('lets the stream go while the tab is hidden and opens it again when the tab is back', async () => {

@@ -113,6 +113,20 @@ describe('court availability', () => {
       });
   });
 
+  it('refuses a day that is too far ahead to book', async () => {
+    await me.get(`/api/courts/${court.id}/availability`).query({ date: '2030-07-03' }).expect(200);
+
+    await me
+      .get(`/api/courts/${court.id}/availability`)
+      .query({ date: '2030-07-04' })
+      .expect(422, {
+        statusCode: 422,
+        code: 'BOOKING_TOO_FAR_AHEAD',
+        message: 'Bookings open 30 days ahead',
+        details: { lastBookableDate: '2030-07-03' },
+      });
+  });
+
   it('hides the slots of an inactive court from users', async () => {
     const inactive = await createCourt('Inactive Court');
     await prisma.court.update({ where: { id: inactive.id }, data: { isActive: false } });

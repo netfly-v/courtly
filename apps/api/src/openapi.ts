@@ -5,6 +5,12 @@ import { AvailabilityChangedEventDto } from './events/availability-changed-event
 
 const config = new DocumentBuilder()
   .setTitle('Courtly API')
+  .setDescription(
+    'Log in first with POST /api/auth/login (Try it out). It sets an httpOnly session cookie ' +
+      "that the other calls send. The Authorize button can't set a cookie from the browser. " +
+      'Live updates: GET /api/events is a Server-Sent Events stream (not listed below). ' +
+      'Each availability.changed event carries an AvailabilityChangedEventDto.'
+  )
   .setVersion('1.0')
   .addCookieAuth(SESSION_COOKIE)
   .build();

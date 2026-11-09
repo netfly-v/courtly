@@ -165,6 +165,41 @@ describe('MyBookingsPage', () => {
     expect(message).toHaveFocus();
   });
 
+  it('keeps the dialog open while cancelling, so a refusal still shows', async () => {
+    serveBookings(() => [booking()]);
+    const answer = Promise.withResolvers<void>();
+    server.use(
+      http.post<{ id: string }, never, ApiErrorDto>('/api/bookings/:id/cancel', async () => {
+        await answer.promise;
+        return HttpResponse.json(
+          {
+            statusCode: 422,
+            code: 'CANCELLATION_WINDOW_CLOSED',
+            message: 'Bookings can be cancelled up to 2 hours before the start',
+          },
+          { status: 422 }
+        );
+      })
+    );
+    const user = userEvent.setup();
+    renderWithClient(<MyBookingsPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Cancel booking' }));
+    const confirm = within(screen.getByRole('alertdialog')).getByRole('button', {
+      name: 'Cancel booking',
+    });
+    await user.click(confirm);
+    await waitFor(() => expect(confirm).toBeDisabled());
+    await user.keyboard('{Escape}');
+    answer.resolve();
+
+    expect(
+      await within(screen.getByRole('alertdialog')).findByText(
+        'Bookings can be cancelled up to 2 hours before the start'
+      )
+    ).toHaveRole('alert');
+  });
+
   it('tells an admin that bookings are for players', async () => {
     const forbidden: ApiErrorDto = {
       statusCode: 403,

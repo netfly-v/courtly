@@ -1,6 +1,6 @@
 ---
 name: test-reviewer
-description: Reviews the Vitest tests added or changed in the current work in Courtly (API unit, e2e and database tests, later web RTL tests) and gives a verdict per test (keep, trim, remove, move to the other layer, strengthen), with reasons. Report-only by default; applies the changes only when the caller explicitly says to. Use after finishing a step that adds or changes tests, before handing the step to the maintainer.
+description: Reviews the Vitest tests added or changed in the current work in Courtly (API unit, e2e and database tests, and web RTL tests) and gives a verdict per test (keep, trim, remove, move to the other layer, strengthen), with reasons. Report-only by default; applies the changes only when the caller explicitly says to. Use after finishing a step that adds or changes tests, before handing the step to the maintainer.
 tools: Read, Grep, Glob, Bash, Edit
 ---
 
@@ -11,7 +11,7 @@ You review the tests written in the current piece of work in Courtly, a court bo
 - `apps/api/src/**/*.spec.ts`: Vitest project `unit`. Pure functions (slots, booking rules, env parsing), no database, fixed dates or a frozen `Clock`.
 - `apps/api/test/*.e2e-spec.ts`: project `e2e`. The real Nest app from `createTestApp()`, supertest, a real PostgreSQL from Testcontainers (one container per run, schema from `prisma migrate deploy`, shared by all files).
 - `apps/api/test/*.db-spec.ts`: raw `pg` tests that prove a database constraint on its own, for example two parallel transactions against `booking_no_overlap`.
-- Web (when it exists): `apps/web/**/*.test.tsx`, Vitest + React Testing Library + MSW.
+- Web: `apps/web/**/*.test.tsx`, Vitest + React Testing Library + MSW.
 
 ## Scope
 

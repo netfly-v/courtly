@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import {
   getGetCourtAvailabilityQueryKey,
   getGetMeQueryKey,
+  getListAdminCourtsQueryKey,
   getListDayBookingsQueryKey,
 } from '@/shared/api/generated';
 import type { AvailabilityChangedEventDto } from '@/shared/api/generated/model';
@@ -37,6 +38,8 @@ export const LiveUpdates = () => {
           queryKey: getGetCourtAvailabilityQueryKey(courtId, { date }),
         });
         void queryClient.invalidateQueries({ queryKey: getListDayBookingsQueryKey({ date }) });
+        // A booking changes the court's upcoming count, shown in the Turn off dialog.
+        void queryClient.invalidateQueries({ queryKey: getListAdminCourtsQueryKey() });
       });
       current.addEventListener('error', () => {
         if (current.readyState !== EventSource.CLOSED) {

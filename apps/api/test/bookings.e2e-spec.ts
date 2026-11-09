@@ -64,12 +64,14 @@ describe('bookings', () => {
     await app.close();
   });
 
-  it('lets only one of ten parallel requests book the same slot', async () => {
+  it('lets only one of ten parallel requests from two users book the same slot', async () => {
     const court = await createCourt('Race Court');
     const body = { courtId: court.id, startsAt: '2030-06-04T09:00:00.000Z', durationHours: 1 };
 
     const responses = await Promise.all(
-      Array.from({ length: 10 }, () => me.post('/api/bookings').send(body))
+      Array.from({ length: 10 }, (_, index) =>
+        (index % 2 === 0 ? me : other).post('/api/bookings').send(body)
+      )
     );
 
     expect(responses.map(response => response.status).sort((a, b) => a - b)).toEqual([
@@ -142,7 +144,7 @@ describe('bookings', () => {
     const court = await createCourt('Closing Court');
     const booking = await book(me, court.id, '2030-06-05T09:00:00.000Z');
 
-    await prisma.court.update({ where: { id: court.id }, data: { isActive: false } });
+    await admin.patch(`/api/courts/${court.id}`).send({ isActive: false }).expect(200);
 
     await me
       .post('/api/bookings')
@@ -154,7 +156,7 @@ describe('bookings', () => {
       });
     const mine = await me.get('/api/bookings/me').expect(200);
     const listed = (mine.body as BookingDto[]).find(({ id }) => id === booking.id);
-    expect(listed?.court.isActive).toBe(false);
+    expect(listed).toMatchObject({ status: 'ACTIVE', court: { isActive: false } });
     await me.post(`/api/bookings/${booking.id}/cancel`).expect(200);
   });
 

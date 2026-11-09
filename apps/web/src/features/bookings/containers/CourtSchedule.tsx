@@ -277,7 +277,8 @@ export const CourtSchedule = ({ courtId, facility }: CourtScheduleProps) => {
         options={durationOptions(slots, selectedIndex, court, timezone)}
         error={dialogError}
         pending={createBooking.isPending}
-        onOpenChange={setDialogOpen}
+        // Stays open while booking: a refusal, like a taken slot, shows its reason here.
+        onOpenChange={open => !createBooking.isPending && setDialogOpen(open)}
         onBook={book}
         onCloseAutoFocus={restoreFocus}
       />

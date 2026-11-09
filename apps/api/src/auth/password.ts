@@ -28,7 +28,11 @@ export const verifyPassword = async (password: string, stored: string) => {
     return false;
   }
   const expected = Buffer.from(hash, 'base64');
+  // Deriving to the stored hash's length would let an empty hash match any password.
+  if (expected.length !== KEY_LENGTH) {
+    return false;
+  }
   const options = { N: Number(N), r: Number(r), p: Number(p) };
-  const actual = await deriveKey(password, Buffer.from(salt, 'base64'), options, expected.length);
+  const actual = await deriveKey(password, Buffer.from(salt, 'base64'), options, KEY_LENGTH);
   return timingSafeEqual(actual, expected);
 };

@@ -24,6 +24,22 @@ interface NewBooking extends TimeRange {
 export const cancellableUntil = (startsAt: Date) =>
   new Date(startsAt.getTime() - CANCELLATION_NOTICE_MS);
 
+export const checkBookingHorizon = (
+  date: string,
+  now: Date,
+  timeZone: string
+): RuleViolation | null => {
+  const lastBookableDate = addDays(facilityDate(now, timeZone), BOOKING_DAYS_AHEAD);
+  if (date <= lastBookableDate) {
+    return null;
+  }
+  return {
+    code: 'BOOKING_TOO_FAR_AHEAD',
+    message: `Bookings open ${BOOKING_DAYS_AHEAD} days ahead`,
+    details: { lastBookableDate },
+  };
+};
+
 // Uses the same slots as the availability endpoint, so the UI never offers a booking that fails.
 export const fitsOpeningHours = (
   booking: TimeRange,
@@ -55,13 +71,9 @@ export const checkNewBooking = (booking: NewBooking): RuleViolation | null => {
   if (startsAt <= now) {
     return { code: 'BOOKING_IN_PAST', message: 'This time has already started' };
   }
-  const lastBookableDate = addDays(facilityDate(now, timeZone), BOOKING_DAYS_AHEAD);
-  if (facilityDate(startsAt, timeZone) > lastBookableDate) {
-    return {
-      code: 'BOOKING_TOO_FAR_AHEAD',
-      message: `Bookings open ${BOOKING_DAYS_AHEAD} days ahead`,
-      details: { lastBookableDate },
-    };
+  const tooFarAhead = checkBookingHorizon(facilityDate(startsAt, timeZone), now, timeZone);
+  if (tooFarAhead) {
+    return tooFarAhead;
   }
   if (!fitsOpeningHours({ startsAt, endsAt }, court.openHour, court.closeHour, timeZone)) {
     return { code: 'OUTSIDE_OPENING_HOURS', message: 'The court is closed at this time' };

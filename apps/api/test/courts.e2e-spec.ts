@@ -121,6 +121,25 @@ describe('courts', () => {
     await admin.patch(`/api/courts/${court.id}`).send({ closeHour: 8 }).expect(400, error);
   });
 
+  it('trims the court name and rejects a name of only spaces', async () => {
+    const response = await admin
+      .post('/api/courts')
+      .send({ ...newCourt, name: '  Padel 9  ' })
+      .expect(201);
+    const court = response.body as CourtDto;
+    createdCourtIds.push(court.id);
+    expect(court.name).toBe('Padel 9');
+
+    const created = await admin
+      .post('/api/courts')
+      .send({ ...newCourt, name: '   ' })
+      .expect(400);
+    const changed = await admin.patch(`/api/courts/${court.id}`).send({ name: '\t\n' }).expect(400);
+    for (const { body } of [created, changed]) {
+      expect(invalidFields(body)).toEqual({ code: 'VALIDATION_FAILED', fields: ['name'] });
+    }
+  });
+
   it('rejects null instead of a value', async () => {
     const court = await createCourt();
 

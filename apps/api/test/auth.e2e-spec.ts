@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { JwtService } from '@nestjs/jwt';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
@@ -107,5 +108,30 @@ describe('auth', () => {
       .set('Cookie', `courtly_session=${forgedToken.sign({ sub: userId })}`)
       .expect(401);
     expect(forged.body).toEqual(noCookie.body);
+  });
+
+  it.each([
+    ['a user that no longer exists', { sub: randomUUID() }],
+    ['a user id that is not a UUID', { sub: 'not-a-uuid' }],
+  ])('rejects a signed session token with %s', async (_name, payload) => {
+    const token = app.get(JwtService).sign(payload);
+
+    await request(app.getHttpServer())
+      .post('/api/bookings')
+      .set('Cookie', `courtly_session=${token}`)
+      .expect(401, { statusCode: 401, code: 'UNAUTHENTICATED', message: 'Please log in' });
+  });
+
+  it('takes the role from the database, not from the token', async () => {
+    const token = app.get(JwtService).sign({ sub: userId, role: 'ADMIN' });
+
+    await request(app.getHttpServer())
+      .get('/api/admin/courts')
+      .set('Cookie', `courtly_session=${token}`)
+      .expect(403, {
+        statusCode: 403,
+        code: 'FORBIDDEN',
+        message: 'You are not allowed to do this',
+      });
   });
 });

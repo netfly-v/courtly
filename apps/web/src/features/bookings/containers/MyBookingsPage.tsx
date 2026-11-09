@@ -161,7 +161,8 @@ export const MyBookingsPage = () => {
         summary={picked ? `${picked.court.name}, ${when(picked, timezone)}` : ''}
         error={toErrorMessage(cancelBooking.error)}
         pending={cancelBooking.isPending}
-        onOpenChange={setDialogOpen}
+        // Stays open while cancelling: a refusal shows its reason here.
+        onOpenChange={open => !cancelBooking.isPending && setDialogOpen(open)}
         onConfirm={confirmCancel}
         onCloseAutoFocus={restoreFocus}
       />

@@ -1,8 +1,12 @@
+name: courtly-netfly
+
 x-api: &api
   build:
     context: .
     dockerfile: apps/api/Dockerfile
-  image: courtly-api
+  image: courtly-netfly-api
+  # Without it, plain `docker compose up` runs an old image with this name instead of building.
+  pull_policy: build
   environment:
     DATABASE_URL: postgresql://courtly:courtly@db:5432/courtly
     # A demo secret for running on your own machine only. Never reuse it anywhere else.
@@ -65,7 +69,8 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         API_INTERNAL_URL: http://api:4000
-    image: courtly-web
+    image: courtly-netfly-web
+    pull_policy: build
     ports:
       - '3000:3000'
     depends_on:

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
@@ -13,6 +14,7 @@ import { Sport } from '../generated/prisma/client.js';
 
 export class CreateCourtDto {
   @ApiProperty({ example: 'Padel 3', maxLength: 60 })
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsNotEmpty()
   @MaxLength(60)

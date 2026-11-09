@@ -13,6 +13,7 @@ describe('fitsOpeningHours', () => {
   it.each([
     ['a slot inside the hours', '2030-06-03T09:00:00Z', 1, 8, 22, true],
     ['a slot before opening', '2030-06-03T06:00:00Z', 1, 8, 22, false],
+    ['2 hours that start an hour before opening', '2030-06-03T06:00:00Z', 2, 8, 22, false],
     ['2 hours that end after closing', '2030-06-03T20:00:00Z', 2, 8, 22, false],
     ['the last 2 hours before a midnight close', '2030-06-03T21:00:00Z', 2, 8, 24, true],
     ['2 hours over midnight', '2030-06-03T22:00:00Z', 2, 8, 24, false],

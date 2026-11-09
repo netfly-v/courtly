@@ -267,6 +267,33 @@ describe('CourtBookingPage', () => {
     expect(within(screen.getByRole('dialog')).getByRole('alert')).toBeEmptyDOMElement();
   });
 
+  it('keeps the dialog open while booking, so a refusal still shows', async () => {
+    serveSlots(() => [slot(10)]);
+    const answer = Promise.withResolvers<void>();
+    server.use(
+      http.post<never, CreateBookingDto, ApiErrorDto>('/api/bookings', async () => {
+        await answer.promise;
+        return HttpResponse.json(
+          { statusCode: 409, code: 'SLOT_TAKEN', message: 'This time has just been booked' },
+          { status: 409 }
+        );
+      })
+    );
+    const user = userEvent.setup();
+    renderWithClient(<CourtBookingPage courtId="c1" />);
+
+    await user.click(await screen.findByRole('button', { name: '11:00 Free' }));
+    const book = screen.getByRole('button', { name: 'Book 11:00–12:00 · €24.00' });
+    await user.click(book);
+    await waitFor(() => expect(book).toBeDisabled());
+    await user.keyboard('{Escape}');
+    answer.resolve();
+
+    expect(
+      await within(screen.getByRole('dialog')).findByText('This time has just been booked')
+    ).toHaveRole('alert');
+  });
+
   it('shows a general message when the booking fails on the server', async () => {
     serveSlots(() => [slot(10)]);
     server.use(

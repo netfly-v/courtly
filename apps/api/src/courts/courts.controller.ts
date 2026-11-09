@@ -10,8 +10,10 @@ import {
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { CurrentUser, Roles } from '../auth/decorators.js';
+import { BOOKING_DAYS_AHEAD } from '../bookings/booking-rules.js';
 import type { SessionUser } from '../auth/session.js';
 import { errorResponse } from '../common/api-error.dto.js';
 import { DayQueryDto, invalidDayResponse } from '../common/day-query.dto.js';
@@ -62,11 +64,17 @@ export class CourtsController {
     summary: 'Get the slots of a court for one day',
     description:
       'One-hour slots from opening to closing on a day in the facility time zone. ' +
-      'Each slot is AVAILABLE, BOOKED or PAST, and bookedByMe marks your own bookings.',
+      'Each slot is AVAILABLE, BOOKED or PAST, and bookedByMe marks your own bookings. ' +
+      'A day after today + bookingDaysAhead (GET /api/facility) answers 422.',
   })
   @ApiOkResponse({ type: AvailabilityDto })
   @ApiBadRequestResponse(invalidDayResponse)
   @ApiNotFoundResponse(notFound)
+  @ApiUnprocessableEntityResponse(
+    errorResponse(422, 'BOOKING_TOO_FAR_AHEAD', `Bookings open ${BOOKING_DAYS_AHEAD} days ahead`, {
+      lastBookableDate: '2026-12-09',
+    })
+  )
   getCourtAvailability(
     @Param() { id }: IdParamDto,
     @Query() { date }: DayQueryDto,

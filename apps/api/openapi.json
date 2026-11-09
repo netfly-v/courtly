@@ -541,7 +541,7 @@
     },
     "/api/courts/{id}/availability": {
       "get": {
-        "description": "One-hour slots from opening to closing on a day in the facility time zone. Each slot is AVAILABLE, BOOKED or PAST, and bookedByMe marks your own bookings.",
+        "description": "One-hour slots from opening to closing on a day in the facility time zone. Each slot is AVAILABLE, BOOKED or PAST, and bookedByMe marks your own bookings. A day after today + bookingDaysAhead (GET /api/facility) answers 422.",
         "operationId": "getCourtAvailability",
         "parameters": [
           {
@@ -621,6 +621,24 @@
                   "statusCode": 404,
                   "code": "COURT_NOT_FOUND",
                   "message": "Court not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                },
+                "example": {
+                  "statusCode": 422,
+                  "code": "BOOKING_TOO_FAR_AHEAD",
+                  "message": "Bookings open 30 days ahead",
+                  "details": {
+                    "lastBookableDate": "2026-12-09"
+                  }
                 }
               }
             }
@@ -1152,7 +1170,7 @@
   },
   "info": {
     "title": "Courtly API",
-    "description": "",
+    "description": "Log in first with POST /api/auth/login (Try it out). It sets an httpOnly session cookie that the other calls send. The Authorize button can't set a cookie from the browser. Live updates: GET /api/events is a Server-Sent Events stream (not listed below). Each availability.changed event carries an AvailabilityChangedEventDto.",
     "version": "1.0",
     "contact": {}
   },

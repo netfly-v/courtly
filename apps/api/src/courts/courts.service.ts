@@ -4,7 +4,7 @@ import type { SessionUser } from '../auth/session.js';
 import { Clock } from '../clock/clock.js';
 import { ApiError } from '../common/api-error.js';
 import type { Environment } from '../config/environment.js';
-import { fitsOpeningHours } from '../bookings/booking-rules.js';
+import { checkBookingHorizon, fitsOpeningHours } from '../bookings/booking-rules.js';
 import { facilityDay } from '../facility/facility-time.js';
 import { BookingStatus, type Court, type Prisma, Role } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -52,6 +52,12 @@ export class CourtsService {
   async availability(id: string, date: string, user: SessionUser): Promise<AvailabilityDto> {
     const court = await this.findVisible(id, user);
     const timeZone = this.config.get('FACILITY_TIMEZONE', { infer: true });
+    const now = this.clock.now();
+    const tooFarAhead = checkBookingHorizon(date, now, timeZone);
+    if (tooFarAhead) {
+      const { code, message, details } = tooFarAhead;
+      throw new ApiError(HttpStatus.UNPROCESSABLE_ENTITY, code, message, details);
+    }
     const day = facilityDay(date, timeZone);
     const bookings = await this.prisma.booking.findMany({
       where: {
@@ -68,7 +74,7 @@ export class CourtsService {
       openHour: court.openHour,
       closeHour: court.closeHour,
       bookings,
-      now: this.clock.now(),
+      now,
       userId: user.id,
     });
     return { court: toCourtDto(court), date, slots: slots.map(toSlotDto) };

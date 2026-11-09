@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { facilityDate, facilityDay, openingSlots } from './facility-time.js';
+import { facilityDate, facilityDay, openingSlots, zonedInstant } from './facility-time.js';
 
 const lisbon = 'Europe/Lisbon';
+
+describe('zonedInstant', () => {
+  it.each([
+    ['a summer hour', '2030-06-03', 8, '2030-06-03T07:00:00.000Z'],
+    [
+      'the missing spring hour as the moment of the jump',
+      '2030-03-31',
+      1,
+      '2030-03-31T01:00:00.000Z',
+    ],
+    ['the second of the two autumn 01:00 hours', '2030-10-27', 1, '2030-10-27T01:00:00.000Z'],
+  ])('gives %s', (_case, date, hour, expected) => {
+    expect(new Date(zonedInstant(date, hour, lisbon)).toISOString()).toBe(expected);
+  });
+});
 
 describe('openingSlots', () => {
   it.each([
