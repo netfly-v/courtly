@@ -23,12 +23,12 @@ export const LoginForm = ({ form, error, pending, onSubmit }: LoginFormProps) =>
   const { errors } = form.formState;
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl">
+        <CardTitle className="text-2xl font-semibold tracking-tight">
           <h1>Log in to Courtly</h1>
         </CardTitle>
-        <CardDescription>Book a court in a few clicks.</CardDescription>
+        <CardDescription>Use your email and password.</CardDescription>
       </CardHeader>
       <CardContent>
         <form

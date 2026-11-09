@@ -13,7 +13,7 @@ export const BookingSection = ({ title, bookings, empty, onCancel }: BookingSect
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <h2 id={headingId} className="text-lg font-semibold">
+      <h2 id={headingId} className="text-xl font-semibold tracking-tight">
         {title}
       </h2>
       {bookings.length === 0 && empty}

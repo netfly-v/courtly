@@ -10,6 +10,7 @@ import { getGetMeQueryKey, useLogin } from '@/shared/api/generated';
 import { type LoginDto, Role } from '@/shared/api/generated/model';
 import { loginSchema } from '../login-schema';
 import { LoginForm } from '../ui/LoginForm';
+import { LoginLayout } from '../ui/LoginLayout';
 
 const toErrorMessage = (error: ApiError | null) => {
   if (!error) {
@@ -47,13 +48,13 @@ export const LoginPage = () => {
   }, [queryClient]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
+    <LoginLayout>
       <LoginForm
         form={form}
         error={toErrorMessage(login.error)}
         pending={pending}
         onSubmit={data => login.mutate({ data })}
       />
-    </main>
+    </LoginLayout>
   );
 };

@@ -33,7 +33,7 @@ export const DayStrip = ({ days, value, onChange }: DayStripProps) => {
           <ToggleGroupItem
             key={day.value}
             value={day.value}
-            className="data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            className="rounded-full bg-card px-4 data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
             ref={day.value === value ? selected : undefined}
           >
             {day.label}

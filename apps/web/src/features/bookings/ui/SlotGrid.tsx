@@ -15,7 +15,8 @@ interface SlotGridProps {
   onPick: (startsAt: string, button: HTMLButtonElement) => void;
 }
 
-const cellClass = 'flex h-14 w-full flex-col items-center justify-center rounded-lg border text-sm';
+const cellClass =
+  'flex h-16 w-full flex-col items-center justify-center gap-0.5 rounded-xl border text-sm';
 
 interface SlotCellProps {
   slot: SlotView;
@@ -26,7 +27,10 @@ interface SlotCellProps {
 const SlotCell = ({ slot, loading, onPick }: SlotCellProps) => {
   const content = (
     <>
-      <span className="font-medium">{slot.time}</span> <span className="text-xs">{slot.label}</span>
+      <span className="font-semibold">{slot.time}</span>{' '}
+      <span className={cn('text-xs', { 'font-medium text-primary': slot.kind === 'free' })}>
+        {slot.label}
+      </span>
     </>
   );
 
@@ -34,8 +38,8 @@ const SlotCell = ({ slot, loading, onPick }: SlotCellProps) => {
     return (
       <div
         className={cn(cellClass, {
-          'border-primary/40 bg-primary/10 text-primary': slot.kind === 'mine',
-          'bg-muted text-foreground/75': slot.kind === 'booked',
+          'border-primary bg-primary text-primary-foreground': slot.kind === 'mine',
+          'bg-hatched text-foreground/70': slot.kind === 'booked',
           'border-dashed text-muted-foreground': slot.kind === 'past',
         })}
       >
@@ -50,7 +54,7 @@ const SlotCell = ({ slot, loading, onPick }: SlotCellProps) => {
       disabled={loading}
       className={cn(
         cellClass,
-        'border-primary/30 bg-card transition-colors hover:bg-primary/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
+        'border-primary/30 bg-card shadow-xs transition-[background-color,border-color,box-shadow,translate] hover:-translate-y-0.5 hover:border-primary hover:bg-primary/5 hover:shadow-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:translate-y-0'
       )}
       onClick={event => onPick(slot.startsAt, event.currentTarget)}
     >

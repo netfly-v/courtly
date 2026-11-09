@@ -131,8 +131,8 @@ several instances would need PostgreSQL `LISTEN/NOTIFY`.
 `pnpm test` runs everything (the API tests need Docker). The API has 85 tests: unit tests for the booking rules,
 slots and facility time, and tests against a real PostgreSQL in Testcontainers for double booking, the cancel
 window, opening hours, roles and the admin day. The API tests freeze "now" through an injected `Clock`. The web app
-has 77 tests with React Testing Library and MSW. They run in New York time with Lisbon data, so a time shown in the
-wrong zone fails. CI runs lint, typecheck, the tests and `docker compose up`.
+has 79 tests, almost all with React Testing Library and MSW. They run in New York time with Lisbon data, so a time
+shown in the wrong zone fails. CI runs lint, typecheck, the tests and `docker compose up`.
 
 ## Develop locally
 

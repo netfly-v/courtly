@@ -18,7 +18,7 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --background: oklch(0.985 0 0);
+  --background: oklch(0.982 0.004 155);
   --foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
@@ -37,9 +37,23 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --brand: oklch(0.36 0.09 158);
+  --brand-foreground: oklch(0.985 0 0);
+  --sport-padel: oklch(0.5 0.15 255);
+  --sport-tennis: oklch(0.52 0.15 40);
+  --sport-squash: oklch(0.5 0.16 305);
+  --sport-pickleball: oklch(0.5 0.1 195);
+  --sport-badminton: oklch(0.52 0.12 85);
 }
 
 @theme inline {
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-sport-padel: var(--sport-padel);
+  --color-sport-tennis: var(--sport-tennis);
+  --color-sport-squash: var(--sport-squash);
+  --color-sport-pickleball: var(--sport-pickleball);
+  --color-sport-badminton: var(--sport-badminton);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -98,6 +112,14 @@
   [role='button']:not(:disabled) {
     cursor: pointer;
   }
+}
+
+@utility bg-hatched {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-muted) 0 6px,
+    var(--color-border) 6px 7px
+  );
 }
 
 .dark {

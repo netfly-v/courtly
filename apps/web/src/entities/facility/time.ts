@@ -35,3 +35,8 @@ export const shiftDay = (date: string, days: number) =>
   format(addDays(parseISO(date), days), 'yyyy-MM-dd');
 
 export const formatDayWithYear = (date: string) => format(parseISO(date), 'EEE d MMM yyyy');
+
+export const dayParts = (instant: string, timeZone: string) => {
+  const day = inZone(instant, timeZone);
+  return { weekday: format(day, 'EEE'), day: format(day, 'd'), month: format(day, 'MMM') };
+};

@@ -2,6 +2,7 @@
 
 import { keepPreviousData } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
+import { CalendarCheckIcon, CalendarXIcon, EuroIcon } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { formatPrice } from '@/entities/court/format';
@@ -29,6 +30,7 @@ const toView = (booking: AdminBookingDto, timeZone: string): DayBookingView => {
     id: booking.id,
     time: formatTimeRange(booking.startsAt, booking.endsAt, timeZone),
     court: booking.court.name,
+    sport: booking.court.sport,
     courtBadge: booking.court.isActive ? undefined : 'Turned off',
     player: booking.user.name,
     email: booking.user.email,
@@ -61,9 +63,13 @@ const renderDay = (
     <>
       <DayTotals
         totals={[
-          { label: 'Active bookings', value: String(totals.activeCount) },
-          { label: 'Cancelled', value: String(totals.cancelledCount) },
-          { label: 'Expected revenue', value: formatPrice(totals.revenueCents) },
+          { label: 'Active bookings', value: String(totals.activeCount), icon: CalendarCheckIcon },
+          { label: 'Cancelled', value: String(totals.cancelledCount), icon: CalendarXIcon },
+          {
+            label: 'Expected revenue',
+            value: formatPrice(totals.revenueCents),
+            icon: EuroIcon,
+          },
         ]}
         hint="Revenue counts active bookings only. Cancelled ones are listed but not counted."
         loading={loading}
@@ -112,8 +118,8 @@ export const AdminDay = ({ facility }: { facility: FacilityDto }) => {
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Bookings</h1>
-        <p className="text-sm text-muted-foreground">All times are in {timezone} time.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Bookings</h1>
+        <p className="text-muted-foreground">All times are in {timezone} time.</p>
       </div>
       <DayNav
         label={date === today ? `Today, ${label}` : label}

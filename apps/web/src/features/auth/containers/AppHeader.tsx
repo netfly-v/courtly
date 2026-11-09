@@ -22,6 +22,14 @@ const navLinks = (role: Role | undefined, pathname: string) => {
   return [];
 };
 
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .map(part => part.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
 export const AppHeader = () => {
   const router = useRouter();
   const pathname = usePathname();
@@ -40,6 +48,7 @@ export const AppHeader = () => {
       homeHref={me.data?.role === Role.ADMIN ? '/admin' : '/'}
       links={navLinks(me.data?.role, pathname)}
       userName={me.data?.name}
+      userInitials={me.data && initials(me.data.name)}
       loggingOut={logout.isPending}
       logoutError={logout.isError ? 'Could not log out. Please try again.' : undefined}
       onLogout={() => logout.mutate()}

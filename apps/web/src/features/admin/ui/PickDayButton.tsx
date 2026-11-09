@@ -16,7 +16,7 @@ export const PickDayButton = ({ day, today, onPick }: PickDayButtonProps) => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="bg-card">
           <CalendarDaysIcon aria-hidden="true" />
           Pick a day
         </Button>

@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { formatPrice, formatSport } from '@/entities/court/format';
-import { formatDayOf, formatTime, formatTimeRange } from '@/entities/facility/time';
+import { dayParts, formatDayOf, formatTime, formatTimeRange } from '@/entities/facility/time';
 import {
   getListMyBookingsQueryKey,
   useCancelBooking,
@@ -26,14 +26,19 @@ const toView = (booking: BookingDto, timeZone: string, now: number): BookingView
   const view: BookingView = {
     id: booking.id,
     court: booking.court.name,
+    sport: booking.court.sport,
+    date: dayParts(booking.startsAt, timeZone),
+    dimmed: false,
     details: `${formatSport(booking.court.sport)} · ${when(booking, timeZone)}`,
     price: formatPrice(booking.totalPriceCents),
   };
   if (!active) {
-    return { ...view, badge: 'Cancelled' };
+    return { ...view, dimmed: true, badge: 'Cancelled' };
   }
   if (startsAt <= now) {
-    return now < Date.parse(booking.endsAt) ? { ...view, badge: 'In progress' } : view;
+    return now < Date.parse(booking.endsAt)
+      ? { ...view, badge: 'In progress' }
+      : { ...view, dimmed: true };
   }
   const until = booking.cancellableUntil;
   // "Up to and including" the deadline, the same as the API.
@@ -122,17 +127,21 @@ export const MyBookingsPage = () => {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-1">
-        <h1 ref={heading} tabIndex={-1} className="text-2xl font-semibold outline-none">
+        <h1
+          ref={heading}
+          tabIndex={-1}
+          className="text-3xl font-semibold tracking-tight outline-none"
+        >
           My bookings
         </h1>
-        <p className="text-sm text-muted-foreground">All times are in {timezone} time.</p>
+        <p className="text-muted-foreground">All times are in {timezone} time.</p>
       </div>
       {cancelled && (
         <p
           ref={cancelledNotice}
           role="status"
           tabIndex={-1}
-          className="rounded-lg border p-3 text-sm outline-none"
+          className="rounded-xl border bg-card p-4 text-sm outline-none"
         >
           Cancelled: {cancelled.court.name}, {when(cancelled, timezone)}.
         </p>

@@ -2,6 +2,7 @@
 
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useQueryClient } from '@tanstack/react-query';
+import { PlusIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import {
@@ -236,17 +237,24 @@ export const AdminCourtsPage = () => {
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 ref={heading} tabIndex={-1} className="text-2xl font-semibold outline-none">
+        <h1
+          ref={heading}
+          tabIndex={-1}
+          className="text-3xl font-semibold tracking-tight outline-none"
+        >
           Courts
         </h1>
-        <Button onClick={event => openForm(undefined, event.currentTarget)}>Add court</Button>
+        <Button onClick={event => openForm(undefined, event.currentTarget)}>
+          <PlusIcon aria-hidden />
+          Add court
+        </Button>
       </div>
       {notice && (
         <p
           ref={noticeRef}
           role="status"
           tabIndex={-1}
-          className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm outline-none"
+          className="rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm outline-none"
         >
           {notice}
         </p>
@@ -260,7 +268,7 @@ export const AdminCourtsPage = () => {
         courts={courts.data.map(court => ({
           id: court.id,
           name: court.name,
-          sport: formatSport(court.sport),
+          sport: court.sport,
           openingHours: formatOpeningHours(court.openHour, court.closeHour),
           price: formatHourlyPrice(court.hourlyPriceCents),
           upcomingBookings: court.upcomingBookingsCount,

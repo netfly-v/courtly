@@ -2,6 +2,7 @@
 
 import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { addHours, parseISO } from 'date-fns';
+import { ArrowLeftIcon, CircleCheckIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -10,7 +11,6 @@ import {
   formatHourlyPrice,
   formatOpeningHours,
   formatPrice,
-  formatSport,
 } from '@/entities/court/format';
 import {
   bookableDays,
@@ -35,6 +35,7 @@ import {
 } from '@/shared/api/generated/model';
 import { toErrorMessage } from '../error-message';
 import { BookingDialog } from '../ui/BookingDialog';
+import { CourtHeader } from '../ui/CourtHeader';
 import { DayStrip } from '../ui/DayStrip';
 import { SlotGrid, type SlotKind } from '../ui/SlotGrid';
 
@@ -215,17 +216,21 @@ export const CourtSchedule = ({ courtId, facility }: CourtScheduleProps) => {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-          ← All courts
+      <div className="flex flex-col gap-3">
+        <Link
+          href="/"
+          className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeftIcon aria-hidden className="size-4" />
+          All courts
         </Link>
-        <h1 ref={heading} tabIndex={-1} className="text-2xl font-semibold outline-none">
-          {court.name}
-        </h1>
-        <p className="text-muted-foreground">
-          {formatSport(court.sport)} · {formatOpeningHours(court.openHour, court.closeHour)} ·{' '}
-          {formatHourlyPrice(court.hourlyPriceCents)}
-        </p>
+        <CourtHeader
+          name={court.name}
+          sport={court.sport}
+          openingHours={formatOpeningHours(court.openHour, court.closeHour)}
+          price={formatHourlyPrice(court.hourlyPriceCents)}
+          headingRef={heading}
+        />
       </div>
       <div className="flex flex-col gap-2">
         <DayStrip
@@ -240,8 +245,9 @@ export const CourtSchedule = ({ courtId, facility }: CourtScheduleProps) => {
           ref={bookedNotice}
           role="status"
           tabIndex={-1}
-          className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm outline-none"
+          className="flex flex-wrap items-center gap-x-1 rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm outline-none"
         >
+          <CircleCheckIcon aria-hidden className="mr-1 size-4 text-primary" />
           {bookedMessage(booked, timezone)}.{' '}
           <Link href="/bookings" className="font-medium text-primary underline underline-offset-4">
             See my bookings

@@ -83,7 +83,8 @@ Keep this list in sync when you add a script.
 - Layers: `app` → `features` → `entities` → `shared`. Import downward only.
   - `src/app` — thin route files (`page.tsx`, `layout.tsx`) that delegate to a feature container.
   - `features/<name>` — business functionality with interactive UI: containers, hooks, UI.
-  - `entities/<name>` — domain helpers (formatters, mapping); no UI.
+  - `entities/<name>` — domain helpers (formatters, mapping) and small prop-driven UI that shows a domain thing
+    the same way in every feature (`entities/court/ui`: court drawing, sport badge); no data fetching, no state.
   - `shared` — API layer (Orval output + fetcher), base UI primitives, utilities; no business logic.
   - `shared/ui` is shadcn/ui code added with the CLI (`components.json` points it there). It keeps shadcn's style
     (function declarations, `import * as React`) so later `shadcn add` updates apply cleanly; the rest of the code
