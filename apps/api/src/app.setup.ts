@@ -4,8 +4,12 @@ import cookieParser from 'cookie-parser';
 import { ApiErrorFilter } from './common/api-error.filter.js';
 import { validationError } from './common/api-error.js';
 
-// No form parser (configureApp adds JSON only), so other sites can't post HTML forms (login CSRF).
-export const APP_OPTIONS: NestApplicationOptions = { bodyParser: false };
+export const APP_OPTIONS: NestApplicationOptions = {
+  // No form parser (configureApp adds JSON only): other sites can't post HTML forms (login CSRF).
+  bodyParser: false,
+  // Event streams never end: app.close() (docker compose stop, tests) would wait for them.
+  forceCloseConnections: true,
+};
 
 export const configureApp = (app: NestExpressApplication) => {
   app.setGlobalPrefix('api');

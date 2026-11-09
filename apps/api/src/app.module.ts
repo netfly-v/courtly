@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { BookingsModule } from './bookings/bookings.module.js';
 import { validateEnvironment } from './config/environment.js';
 import { CourtsModule } from './courts/courts.module.js';
+import { EventsModule } from './events/events.module.js';
 import { FacilityController } from './facility/facility.controller.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -17,6 +18,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     CourtsModule,
     BookingsModule,
     AdminModule,
+    EventsModule,
   ],
   controllers: [HealthController, FacilityController],
 })

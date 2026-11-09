@@ -1779,6 +1779,24 @@
           "isActive",
           "upcomingBookingsCount"
         ]
+      },
+      "AvailabilityChangedEventDto": {
+        "type": "object",
+        "properties": {
+          "courtId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-11-10",
+            "description": "Facility day of the booking"
+          }
+        },
+        "required": [
+          "courtId",
+          "date"
+        ]
       }
     }
   }

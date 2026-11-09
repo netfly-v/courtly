@@ -4,7 +4,8 @@ import type { SessionUser } from '../auth/session.js';
 import { Clock } from '../clock/clock.js';
 import { ApiError } from '../common/api-error.js';
 import type { Environment } from '../config/environment.js';
-import { HOUR_MS } from '../facility/facility-time.js';
+import { EventsBus } from '../events/events.bus.js';
+import { facilityDate, HOUR_MS } from '../facility/facility-time.js';
 import { BookingStatus } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { violatesConstraint } from '../prisma/prisma-errors.js';
@@ -28,10 +29,23 @@ export class BookingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService<Environment, true>,
-    private readonly clock: Clock
+    private readonly clock: Clock,
+    private readonly events: EventsBus
   ) {}
 
+  private announce(courtId: string, startsAt: Date) {
+    const timeZone = this.config.get('FACILITY_TIMEZONE', { infer: true });
+    this.events.availabilityChanged(courtId, facilityDate(startsAt, timeZone));
+  }
+
   async createBooking(user: SessionUser, body: CreateBookingDto): Promise<BookingDto> {
+    // Announce only after the commit, or a refetch could come before the new row is visible.
+    const booking = await this.insertBooking(user, body);
+    this.announce(booking.court.id, new Date(booking.startsAt));
+    return booking;
+  }
+
+  private async insertBooking(user: SessionUser, body: CreateBookingDto): Promise<BookingDto> {
     const startsAt = new Date(body.startsAt);
     const endsAt = new Date(startsAt.getTime() + body.durationHours * HOUR_MS);
     try {
@@ -116,6 +130,7 @@ export class BookingsService {
         { cancellableUntil: deadline }
       );
     }
+    this.announce(booking.courtId, booking.startsAt);
     return toBookingDto(booking);
   }
 }

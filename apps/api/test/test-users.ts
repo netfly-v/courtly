@@ -20,3 +20,12 @@ export const loginAs = async (app: NestExpressApplication, email: string) => {
   await agent.post('/api/auth/login').send({ email, password: PASSWORD }).expect(200);
   return agent;
 };
+
+export const sessionCookie = async (app: NestExpressApplication, email: string) => {
+  const response = await request(app.getHttpServer())
+    .post('/api/auth/login')
+    .send({ email, password: PASSWORD })
+    .expect(200);
+  const [cookie = ''] = response.get('Set-Cookie') ?? [];
+  return cookie.split(';')[0] ?? '';
+};

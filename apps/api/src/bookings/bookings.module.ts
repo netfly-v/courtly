@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ClockModule } from '../clock/clock.module.js';
+import { EventsModule } from '../events/events.module.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { BookingsController } from './bookings.controller.js';
 import { BookingsService } from './bookings.service.js';
 
 @Module({
-  imports: [PrismaModule, ClockModule],
+  imports: [PrismaModule, ClockModule, EventsModule],
   controllers: [BookingsController],
   providers: [BookingsService],
 })

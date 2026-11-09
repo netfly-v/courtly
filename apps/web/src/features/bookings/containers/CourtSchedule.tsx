@@ -102,6 +102,17 @@ const durationOptions = (slots: SlotDto[], index: number, court: CourtDto, timeZ
   ];
 };
 
+// A refetch (a live update, a tab coming back) can take the slot while the dialog is open.
+const lostSlotMessage = (slot: SlotDto | undefined) => {
+  if (slot?.status === SlotStatus.BOOKED) {
+    return 'This time has just been booked';
+  }
+  if (slot?.status === SlotStatus.PAST) {
+    return 'This time has already started';
+  }
+  return undefined;
+};
+
 const bookedMessage = (booking: BookingDto, timeZone: string) =>
   `Booked: ${formatDayOf(booking.startsAt, timeZone)}, ${formatTimeRange(booking.startsAt, booking.endsAt, timeZone)} · ${formatPrice(booking.totalPriceCents)}`;
 
@@ -197,6 +208,10 @@ export const CourtSchedule = ({ courtId, facility }: CourtScheduleProps) => {
   const selectedIndex = slots.findIndex(slot => slot.startsAt === selectedStartsAt);
   const selectedSlot = slots[selectedIndex];
   const hasFreeSlot = slots.some(slot => slot.status === SlotStatus.AVAILABLE);
+  const watchesSlot = dialogOpen && !createBooking.isPending;
+  const dialogError =
+    toErrorMessage(createBooking.error) ??
+    (watchesSlot ? lostSlotMessage(selectedSlot) : undefined);
 
   return (
     <section className="flex flex-col gap-6">
@@ -260,7 +275,7 @@ export const CourtSchedule = ({ courtId, facility }: CourtScheduleProps) => {
             : ''
         }
         options={durationOptions(slots, selectedIndex, court, timezone)}
-        error={toErrorMessage(createBooking.error)}
+        error={dialogError}
         pending={createBooking.isPending}
         onOpenChange={setDialogOpen}
         onBook={book}
