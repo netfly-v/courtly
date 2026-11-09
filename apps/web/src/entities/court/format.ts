@@ -20,3 +20,8 @@ export const formatHourlyPrice = (cents: number) => `${formatPrice(cents)} / hou
 
 export const formatOpeningHours = (openHour: number, closeHour: number) =>
   `${formatHour(openHour)}–${formatHour(closeHour)}`;
+
+// 19.99 * 100 is 1998.9999999999998, and the API takes whole cents only.
+export const eurosToCents = (euros: string) => Math.round(Number(euros) * 100);
+
+export const centsToEuros = (cents: number) => (cents / 100).toFixed(2);

@@ -6,17 +6,20 @@ import { useGetMe, useLogout } from '@/shared/api/generated';
 import { Role } from '@/shared/api/generated/model';
 import { HeaderBar } from '../ui/HeaderBar';
 
-// Admins can't book, so they get no My bookings page.
 const navLinks = (role: Role | undefined, pathname: string) => {
-  const courts = {
-    href: '/',
-    label: 'Courts',
-    active: pathname === '/' || pathname.startsWith('/courts/'),
-  };
-  if (role !== Role.USER) {
-    return [courts];
+  if (role === Role.ADMIN) {
+    return [
+      { href: '/admin', label: 'Bookings', active: pathname === '/admin' },
+      { href: '/admin/courts', label: 'Courts', active: pathname === '/admin/courts' },
+    ];
   }
-  return [courts, { href: '/bookings', label: 'My bookings', active: pathname === '/bookings' }];
+  if (role === Role.USER) {
+    return [
+      { href: '/', label: 'Courts', active: pathname === '/' || pathname.startsWith('/courts/') },
+      { href: '/bookings', label: 'My bookings', active: pathname === '/bookings' },
+    ];
+  }
+  return [];
 };
 
 export const AppHeader = () => {
@@ -34,6 +37,7 @@ export const AppHeader = () => {
 
   return (
     <HeaderBar
+      homeHref={me.data?.role === Role.ADMIN ? '/admin' : '/'}
       links={navLinks(me.data?.role, pathname)}
       userName={me.data?.name}
       loggingOut={logout.isPending}

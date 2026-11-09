@@ -60,9 +60,25 @@ describe('AppHeader', () => {
   });
 
   it.each([
-    ['a user', 'USER', ['Courts', 'My bookings']],
-    ['an admin', 'ADMIN', ['Courts']],
-  ] as const)('shows %s the pages they can use', async (_who, role, links) => {
+    [
+      'a user',
+      'USER',
+      '/',
+      [
+        ['Courts', '/'],
+        ['My bookings', '/bookings'],
+      ],
+    ],
+    [
+      'an admin',
+      'ADMIN',
+      '/admin',
+      [
+        ['Bookings', '/admin'],
+        ['Courts', '/admin/courts'],
+      ],
+    ],
+  ] as const)('shows %s the pages they can use', async (_who, role, home, links) => {
     server.use(
       http.get<never, never, UserDto>('/api/auth/me', () => HttpResponse.json({ ...anna, role }))
     );
@@ -73,17 +89,22 @@ describe('AppHeader', () => {
     expect(
       within(nav)
         .getAllByRole('link')
-        .map(link => link.textContent)
+        .map(link => [link.textContent, link.getAttribute('href')])
     ).toEqual(links);
+    expect(screen.getByRole('link', { name: 'Courtly' })).toHaveAttribute('href', home);
   });
 
   it.each([
-    ['/', 'Courts'],
-    ['/courts/c1', 'Courts'],
-    ['/bookings', 'My bookings'],
-  ])('marks the link of %s as the current page', async (pathname, current) => {
+    ['/', 'USER', 'Courts'],
+    ['/courts/c1', 'USER', 'Courts'],
+    ['/bookings', 'USER', 'My bookings'],
+    ['/admin', 'ADMIN', 'Bookings'],
+    ['/admin/courts', 'ADMIN', 'Courts'],
+  ] as const)('marks the link of %s as the current page', async (pathname, role, current) => {
     navigation.pathname = pathname;
-    server.use(http.get<never, never, UserDto>('/api/auth/me', () => HttpResponse.json(anna)));
+    server.use(
+      http.get<never, never, UserDto>('/api/auth/me', () => HttpResponse.json({ ...anna, role }))
+    );
     renderWithClient(<AppHeader />);
 
     await screen.findByText('Anna Silva');

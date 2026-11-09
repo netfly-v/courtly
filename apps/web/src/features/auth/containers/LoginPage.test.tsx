@@ -13,22 +13,28 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }));
 const anna: UserDto = { id: 'u1', email: 'anna@courtly.dev', name: 'Anna Silva', role: 'USER' };
 
 describe('LoginPage', () => {
-  it('logs in with a demo account and opens the courts', async () => {
-    let sent: LoginDto | undefined;
-    server.use(
-      http.post<never, LoginDto, UserDto>('/api/auth/login', async ({ request }) => {
-        sent = await request.json();
-        return HttpResponse.json(anna);
-      })
-    );
-    const user = userEvent.setup();
-    renderWithClient(<LoginPage />);
+  it.each([
+    ['Anna Silva', anna, '/'],
+    ['Vitalii', { ...anna, name: 'Vitalii', email: 'admin@courtly.dev', role: 'ADMIN' }, '/admin'],
+  ] as const)(
+    'logs in as %s with a demo account and opens their home page',
+    async (name, account, home) => {
+      let sent: LoginDto | undefined;
+      server.use(
+        http.post<never, LoginDto, UserDto>('/api/auth/login', async ({ request }) => {
+          sent = await request.json();
+          return HttpResponse.json(account);
+        })
+      );
+      const user = userEvent.setup();
+      renderWithClient(<LoginPage />);
 
-    await user.click(screen.getByRole('button', { name: 'Log in as Anna Silva' }));
+      await user.click(screen.getByRole('button', { name: `Log in as ${name}` }));
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/'));
-    expect(sent).toEqual({ email: 'anna@courtly.dev', password: 'courtly-demo' });
-  });
+      await waitFor(() => expect(replace).toHaveBeenCalledWith(home));
+      expect(sent).toEqual({ email: account.email, password: 'courtly-demo' });
+    }
+  );
 
   it('shows the message from the API when the password is wrong', async () => {
     server.use(

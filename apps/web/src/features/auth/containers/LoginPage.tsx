@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import type { ApiError } from '@/shared/api/fetcher';
 import { getGetMeQueryKey, useLogin } from '@/shared/api/generated';
-import type { LoginDto } from '@/shared/api/generated/model';
+import { type LoginDto, Role } from '@/shared/api/generated/model';
 import { loginSchema } from '../login-schema';
 import { LoginForm } from '../ui/LoginForm';
 
@@ -41,7 +41,7 @@ export const LoginPage = () => {
       onSuccess: user => {
         queryClient.clear();
         queryClient.setQueryData(getGetMeQueryKey(), user);
-        router.replace('/');
+        router.replace(user.role === Role.ADMIN ? '/admin' : '/');
       },
     },
   });

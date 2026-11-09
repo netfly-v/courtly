@@ -9,6 +9,7 @@ interface NavLink {
 }
 
 interface HeaderBarProps {
+  homeHref: string;
   links: NavLink[];
   userName?: string;
   loggingOut: boolean;
@@ -17,6 +18,7 @@ interface HeaderBarProps {
 }
 
 export const HeaderBar = ({
+  homeHref,
   links,
   userName,
   loggingOut,
@@ -26,7 +28,7 @@ export const HeaderBar = ({
   <header className="border-b bg-card">
     <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4">
       <div className="flex items-center gap-4 sm:gap-6">
-        <Link href="/" className="text-lg font-semibold text-primary">
+        <Link href={homeHref} className="text-lg font-semibold text-primary">
           Courtly
         </Link>
         <nav aria-label="Main" className="flex items-center gap-4 text-sm">

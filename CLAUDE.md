@@ -114,7 +114,7 @@ Keep this list in sync when you add a script.
 ### Forms
 
 - react-hook-form with a yup schema that lives in the feature and mirrors the API DTO rules
-  (`ObjectSchema<GeneratedDto>`). `noValidate` on the form, so the browser shows no popups of its own.
+  (`ObjectSchema<GeneratedDto>`, or a type derived from it when the form shows another unit, e.g. euros, not cents). `noValidate` on the form, so the browser shows no popups of its own.
 - Each field shows its error in red right under it, in a line that is always rendered (`min-h-5`), so the layout
   doesn't jump. Link it with `aria-describedby` and set `aria-invalid` on the input.
 
