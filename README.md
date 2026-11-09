@@ -8,9 +8,11 @@ Stack: TypeScript, NestJS, PostgreSQL + Prisma, Next.js, Docker Compose.
 
 ## Run it
 
-You need Docker. From the repo root:
+You need Docker.
 
 ```bash
+git clone https://github.com/netfly-v/courtly.git
+cd courtly
 docker compose up --build
 ```
 
@@ -27,6 +29,97 @@ Demo accounts, all with the password `courtly-demo`:
 
 The demo bookings are placed around the day you first start it. To start again with fresh data, run
 `docker compose down -v` and then `docker compose up` again.
+
+To see live updates, log in as Anna in one window and as Ben in a private window, open the same court and day,
+and book a slot in one of them.
+
+## Stack and why
+
+**NestJS, not Express.** Every endpoint needs the same things: the session, the role, input validation and one error
+format. Nest has a place for each of them (guards, pipes, a filter), its DI lets tests freeze time with a fake clock,
+and it generates the OpenAPI spec. Express would be less code here, but I'd build the same pieces by hand.
+
+**Next.js, not a plain React SPA.** Besides routing and layouts, Next proxies `/api/*` to the API, so the browser
+sees one origin: the httpOnly login cookie is first-party and there's no CORS. The cost is an extra Node server,
+because pages load their data in the browser with React Query (Orval generates the hooks from the API's
+`openapi.json`).
+
+**PostgreSQL with Prisma.** The main rule, "two active bookings of one court never overlap", can be a constraint
+inside PostgreSQL. MySQL and MongoDB have nothing like it, so there the rule would live in code. Prisma gives typed
+queries and migrations, but it can't describe that constraint, so it's raw SQL in the migration.
+
+## Data model
+
+Three tables: `users`, `courts` and `bookings` (`apps/api/prisma/schema.prisma`). A booking keeps its time as
+`timestamptz` in UTC, its status (`ACTIVE` or `CANCELLED`) and its total price in cents, copied from the court when
+it is created. So a cancel or a new price never rewrites history, and courts are never deleted, only turned off.
+CHECK constraints in the migration back up the rules: opening hours within one day, 1 or 2 hours, start on the hour,
+prices above zero.
+
+## How I prevent double bookings
+
+The guarantee lives in the database, in `apps/api/prisma/migrations/20261106111757_init/migration.sql`:
+
+```sql
+ADD CONSTRAINT "booking_no_overlap"
+  EXCLUDE USING gist (
+    "court_id" WITH =,
+    tstzrange("starts_at", "ends_at", '[)') WITH &&
+  ) WHERE ("status" = 'ACTIVE');
+```
+
+Two active bookings of one court can't have overlapping time ranges. PostgreSQL checks this on every insert, so two
+requests at the same instant can't both get through. `'[)'` lets 10-11 and 11-12 both exist, and cancelled bookings
+don't block. The service doesn't check before the insert. It inserts and turns the constraint error
+into `409 SLOT_TAKEN` (Prisma 7 wraps PostgreSQL's `23P01` as `P2039`, so `apps/api/src/prisma/prisma-errors.ts`
+looks for the constraint name).
+
+The transaction that creates a booking also locks the court row first (`FOR NO KEY UPDATE` in
+`apps/api/src/bookings/bookings.service.ts`). Without it, parallel conflicting inserts can deadlock, and one user
+gets a 500 instead of a 409. The lock also makes a change of opening hours wait for a booking in progress. But the
+lock is not the guarantee: code without it can deadlock, never double book.
+
+I rejected "check, then insert" (two requests can both see the slot as free), a slots table with a unique key
+(duplicate data, tied to the 1-hour grid) and SERIALIZABLE (every booking needs a retry loop). The proof is in two
+tests: `apps/api/test/booking-constraints.db-spec.ts` runs two raw transactions against PostgreSQL, and
+`apps/api/test/bookings.e2e-spec.ts` sends 10 parallel requests for one slot and gets one 201 and nine 409.
+
+## Business rules and assumptions
+
+- One facility in `Europe/Lisbon`. The database stores UTC. Slots, days and the times on screen use the facility
+  time zone, not the browser's.
+- Opening hours are whole hours, the same every day, within one day. A booking is 1 or 2 hours, starts on the hour
+  and ends by closing time. A slot that has started is past.
+- Booking up to 30 days ahead. Cancelling is allowed until exactly 2 hours before the start, later the API answers
+  422 `CANCELLATION_WINDOW_CLOSED`.
+- Turning a court off keeps its future bookings and only blocks new ones. A booking is a promise, and the app can't
+  tell people it was cancelled. The admin sees how many upcoming bookings the court has first.
+- Shortening the opening hours is refused (409) while a booking would fall outside them.
+- The admin manages courts and sees all bookings, but doesn't book or cancel.
+- Day revenue sums the active bookings that start that day, at the price stored on each booking. Money is integer
+  cents.
+- Known gap: on the night the clocks go back, a court that opens at midnight can't take a 2-hour booking from 00:00.
+
+Errors always look like `{ statusCode, code, message, details? }` with a stable `code`: 400 bad input, 401 not
+logged in, 403 wrong role, 404 not found (also for other users' bookings), 409 conflict with existing data, 422 a
+booking rule says no.
+
+## Live updates (bonus)
+
+Free slots and the admin's day update without a refresh, over Server-Sent Events (SSE). After a booking or a cancel
+commits, the API sends `{ courtId, date }` to every open `GET /api/events` stream, and the web app reloads that day.
+SSE, not WebSockets: updates only go one way, and SSE is plain HTTP that passes the Next proxy and uses the same
+cookie. The API sends a ping every 15 seconds, because the Next proxy cuts a silent stream after 30. Hidden tabs
+close their stream (a browser keeps at most 6 connections to one site). The events live in one API process, so
+several instances would need PostgreSQL `LISTEN/NOTIFY`.
+
+## Tests
+
+`pnpm test` runs everything (the API tests need Docker). The API has 75 tests: unit tests for the booking rules,
+slots and facility time, and tests against a real PostgreSQL in Testcontainers for double booking, the cancel
+window, opening hours, roles and the admin day. The API tests freeze "now" through an injected `Clock`. The web app
+has 73 tests with React Testing Library and MSW. They run in New York time with Lisbon data, so a time shown in the
+wrong zone fails. CI runs lint, typecheck, the tests and `docker compose up`.
 
 ## Develop locally
 
@@ -48,12 +141,24 @@ pnpm --filter @courtly/api dev   # API on http://localhost:4000
 pnpm --filter @courtly/web dev   # web app on http://localhost:3000
 ```
 
-The web app passes every `/api/*` request on to the API. So the browser talks to one site only,
-and the login cookie works without CORS.
+The Orval client is generated and not in git. After pulling API changes, run
+`pnpm --filter @courtly/web api:generate`. After changing the API yourself, run `pnpm api:generate` and commit the
+new `apps/api/openapi.json` (CI fails if it is out of date).
 
-The API types in the web app are generated. The API contract is exported to `apps/api/openapi.json`, which is
-committed, and Orval builds the typed client from it. The client itself is not in git, so the web app doesn't
-build or start without it. A fresh `pnpm install` already builds it, but `pnpm install` skips that step when the
-dependencies didn't change, so run `pnpm --filter @courtly/web api:generate` again after pulling API changes.
-After changing a request or a response in the API yourself, run `pnpm api:generate` and commit the new
-`openapi.json`. CI fails if it is out of date.
+## What I'd do next
+
+- Email notifications. Then auto-cancel with a message when a court is turned off, and a waitlist that offers a freed
+  slot to the next person.
+- Seed 10k+ bookings and add `EXPLAIN ANALYZE` numbers for availability and the admin day here (the indexes are
+  already there).
+- Store sessions in the database, so logout ends a session right away. Now the JWT stays valid until it expires
+  (8 hours).
+- Limit login attempts.
+- Opening hours per weekday and holidays.
+- Playwright tests for the main flows, and smaller Docker images.
+
+## How I used AI
+
+I used Claude Code for most of the typing. I made the decisions: for each step it wrote a short design with options,
+and I chose one or asked for changes. I read every change and made all commits myself. My rules for it are in
+`CLAUDE.md`, and two review agents in `.claude/agents/` check comments and tests.
