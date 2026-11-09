@@ -131,6 +131,33 @@ describe('AdminDayPage', () => {
     expect(dayHeading()).toHaveTextContent('Today, Wed 15 Jul 2026');
   });
 
+  it('jumps to a day picked in the calendar, where today is the facility day', async () => {
+    // 00:30 on 15 July in Lisbon, but still 14 July in New York.
+    vi.setSystemTime(new Date('2026-07-14T23:30:00Z'));
+    serveDays({ '2026-06-20': { bookings: [booking()], totals: emptyTotals } });
+    const user = userEvent.setup();
+    renderWithClient(<AdminDayPage />);
+    await screen.findByText('No bookings on Wed 15 Jul 2026.');
+
+    await user.click(screen.getByRole('button', { name: 'Pick a day' }));
+    const calendar = screen.getByRole('dialog', { name: 'Pick a day' });
+    expect(
+      within(calendar).getByRole('button', { name: 'Today, Wednesday, July 15th, 2026, selected' })
+    ).toHaveFocus();
+    await user.click(within(calendar).getByRole('button', { name: 'Go to the Previous Month' }));
+    await user.click(within(calendar).getByRole('button', { name: 'Saturday, June 20th, 2026' }));
+
+    expect(await screen.findByText('Anna Silva')).toBeInTheDocument();
+    expect(dayHeading()).toHaveTextContent('Sat 20 Jun 2026');
+    expect(window.location.search).toBe('?date=2026-06-20');
+    expect(screen.getByRole('button', { name: 'Pick a day' })).toHaveFocus();
+
+    await user.click(screen.getByRole('button', { name: 'Pick a day' }));
+    expect(
+      screen.getByRole('button', { name: 'Saturday, June 20th, 2026, selected' })
+    ).toHaveFocus();
+  });
+
   it.each([
     ['a past day', '2026-07-01', 'Wed 1 Jul 2026'],
     ['a day that does not exist', '2026-07-32', 'Today, Wed 15 Jul 2026'],

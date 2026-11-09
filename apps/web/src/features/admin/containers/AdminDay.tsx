@@ -1,6 +1,7 @@
 'use client';
 
 import { keepPreviousData } from '@tanstack/react-query';
+import { format, parseISO } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { formatPrice } from '@/entities/court/format';
@@ -116,9 +117,12 @@ export const AdminDay = ({ facility }: { facility: FacilityDto }) => {
       </div>
       <DayNav
         label={date === today ? `Today, ${label}` : label}
+        day={parseISO(date)}
+        today={parseISO(today)}
         onPrevious={() => pickDay(shiftDay(date, -1))}
         onToday={() => pickDay(today)}
         onNext={() => pickDay(shiftDay(date, 1))}
+        onPick={picked => pickDay(format(picked, 'yyyy-MM-dd'))}
       />
       {renderDay(day.data, day.isError, day.isPlaceholderData, label, timezone)}
     </section>
