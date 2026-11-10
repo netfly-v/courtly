@@ -22,6 +22,7 @@ import {
 } from '@/entities/facility/time';
 import {
   getGetCourtAvailabilityQueryKey,
+  getListMyBookingsQueryKey,
   useCreateBooking,
   useGetCourtAvailability,
 } from '@/shared/api/generated';
@@ -33,9 +34,11 @@ import {
   type SlotDto,
   SlotStatus,
 } from '@/shared/api/generated/model';
+import { putBookingInCache } from '../booking-cache';
 import { toErrorMessage } from '../error-message';
 import { BookingDialog } from '../ui/BookingDialog';
 import { CourtHeader } from '../ui/CourtHeader';
+import { CourtScheduleSkeleton } from '../ui/CourtScheduleSkeleton';
 import { DayStrip } from '../ui/DayStrip';
 import { SlotGrid, type SlotKind } from '../ui/SlotGrid';
 
@@ -139,8 +142,10 @@ export const CourtSchedule = ({ courtId, facility }: CourtScheduleProps) => {
   );
   const createBooking = useCreateBooking({
     mutation: {
+      onSuccess: booking => putBookingInCache(queryClient, booking, timezone),
       onSettled: () => {
         void queryClient.invalidateQueries({ queryKey: getGetCourtAvailabilityQueryKey(courtId) });
+        void queryClient.invalidateQueries({ queryKey: getListMyBookingsQueryKey() });
       },
     },
   });
@@ -202,7 +207,7 @@ export const CourtSchedule = ({ courtId, facility }: CourtScheduleProps) => {
     );
   }
   if (!availability.data) {
-    return <p className="text-muted-foreground">Loading…</p>;
+    return <CourtScheduleSkeleton />;
   }
 
   const { court, slots } = availability.data;

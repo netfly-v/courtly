@@ -4,6 +4,7 @@ import { formatHourlyPrice, formatOpeningHours } from '@/entities/court/format';
 import { useGetMe, useListCourts } from '@/shared/api/generated';
 import { type CourtDto, Role } from '@/shared/api/generated/model';
 import { CourtCard } from '../ui/CourtCard';
+import { CourtsSkeleton } from '../ui/CourtsSkeleton';
 
 const renderCourts = (courts: CourtDto[] | undefined, failed: boolean, canBook: boolean) => {
   if (courts?.length === 0) {
@@ -35,7 +36,7 @@ const renderCourts = (courts: CourtDto[] | undefined, failed: boolean, canBook: 
       </p>
     );
   }
-  return <p className="text-muted-foreground">Loading courts…</p>;
+  return <CourtsSkeleton withLink={canBook} />;
 };
 
 export const CourtsPage = () => {

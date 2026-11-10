@@ -1,6 +1,7 @@
 'use client';
 
 import { useGetFacility } from '@/shared/api/generated';
+import { CourtScheduleSkeleton } from '../ui/CourtScheduleSkeleton';
 import { CourtSchedule } from './CourtSchedule';
 
 export const CourtBookingPage = ({ courtId }: { courtId: string }) => {
@@ -16,5 +17,5 @@ export const CourtBookingPage = ({ courtId }: { courtId: string }) => {
       </p>
     );
   }
-  return <p className="text-muted-foreground">Loading…</p>;
+  return <CourtScheduleSkeleton />;
 };

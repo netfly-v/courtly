@@ -31,6 +31,7 @@ import {
 import { Button } from '@/shared/ui/button';
 import { type CourtFormValues, courtFormSchema } from '../court-form-schema';
 import { toErrorMessage } from '../error-message';
+import { AdminCourtsSkeleton } from '../ui/AdminCourtsSkeleton';
 import { CourtFormDialog } from '../ui/CourtFormDialog';
 import { CourtsTable } from '../ui/CourtsTable';
 import { TurnOffDialog } from '../ui/TurnOffDialog';
@@ -227,7 +228,7 @@ export const AdminCourtsPage = () => {
     );
   }
   if (!courts.data || !facility.data) {
-    return <p className="text-muted-foreground">Loading…</p>;
+    return <AdminCourtsSkeleton />;
   }
 
   const { timezone } = facility.data;

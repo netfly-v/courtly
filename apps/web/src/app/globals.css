@@ -44,6 +44,7 @@
   --sport-squash: oklch(0.5 0.16 305);
   --sport-pickleball: oklch(0.5 0.1 195);
   --sport-badminton: oklch(0.52 0.12 85);
+  --skeleton: oklch(0.93 0.006 155);
 }
 
 @theme inline {
@@ -99,6 +100,10 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  /* Muted is too close to the tinted page background to show a loading shape. */
+  [data-slot='skeleton'] {
+    --muted: var(--skeleton);
   }
 
   body {

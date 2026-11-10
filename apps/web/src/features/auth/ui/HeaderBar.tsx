@@ -2,6 +2,7 @@ import { cn } from 'cn';
 import { LogOutIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/shared/ui/button';
+import { Skeleton } from '@/shared/ui/skeleton';
 import { LogoMark } from './LogoMark';
 
 interface NavLink {
@@ -13,6 +14,7 @@ interface NavLink {
 interface HeaderBarProps {
   homeHref: string;
   links: NavLink[];
+  loading: boolean;
   userName?: string;
   userInitials?: string;
   loggingOut: boolean;
@@ -23,6 +25,7 @@ interface HeaderBarProps {
 export const HeaderBar = ({
   homeHref,
   links,
+  loading,
   userName,
   userInitials,
   loggingOut,
@@ -40,6 +43,12 @@ export const HeaderBar = ({
           <span className="sr-only sm:not-sr-only">Courtly</span>
         </Link>
         <nav aria-label="Main" className="flex items-center gap-1 text-sm">
+          {loading && (
+            <>
+              <Skeleton className="h-8 w-16 rounded-full" />
+              <Skeleton className="h-8 w-24 rounded-full" />
+            </>
+          )}
           {links.map(link => (
             <Link
               key={link.href}
@@ -59,6 +68,12 @@ export const HeaderBar = ({
         </nav>
       </div>
       <div className="flex items-center gap-2">
+        {loading && (
+          <span className="flex items-center gap-2">
+            <Skeleton className="size-8 rounded-full" />
+            <Skeleton className="hidden h-5 w-20 sm:block" />
+          </span>
+        )}
         {userName && (
           <span className="flex items-center gap-2">
             <span

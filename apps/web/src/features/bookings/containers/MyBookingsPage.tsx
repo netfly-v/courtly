@@ -6,16 +6,19 @@ import { useRef, useState } from 'react';
 import { formatPrice, formatSport } from '@/entities/court/format';
 import { dayParts, formatDayOf, formatTime, formatTimeRange } from '@/entities/facility/time';
 import {
+  getGetCourtAvailabilityQueryKey,
   getListMyBookingsQueryKey,
   useCancelBooking,
   useGetFacility,
   useListMyBookings,
 } from '@/shared/api/generated';
 import { type BookingDto, BookingScope, BookingStatus } from '@/shared/api/generated/model';
+import { putBookingInCache } from '../booking-cache';
 import { toErrorMessage } from '../error-message';
 import type { BookingView } from '../ui/BookingRow';
 import { BookingSection } from '../ui/BookingSection';
 import { CancelDialog } from '../ui/CancelDialog';
+import { MyBookingsSkeleton } from '../ui/MyBookingsSkeleton';
 
 const when = (booking: BookingDto, timeZone: string) =>
   `${formatDayOf(booking.startsAt, timeZone)}, ${formatTimeRange(booking.startsAt, booking.endsAt, timeZone)}`;
@@ -58,8 +61,9 @@ export const MyBookingsPage = () => {
   const [cancelId, setCancelId] = useState<string>();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cancelled, setCancelled] = useState<BookingDto>();
+  const [announcement, setAnnouncement] = useState<string>();
   const pickedButton = useRef<HTMLButtonElement>(null);
-  const cancelledNotice = useRef<HTMLParagraphElement>(null);
+  const cancelledRow = useRef<HTMLHeadingElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const queryClient = useQueryClient();
   const facility = useGetFacility({ query: { staleTime: Infinity } });
@@ -67,6 +71,14 @@ export const MyBookingsPage = () => {
   const past = useListMyBookings({ scope: BookingScope.past });
   const cancelBooking = useCancelBooking({
     mutation: {
+      onSuccess: booking => {
+        if (facility.data) {
+          putBookingInCache(queryClient, booking, facility.data.timezone);
+        }
+        void queryClient.invalidateQueries({
+          queryKey: getGetCourtAvailabilityQueryKey(booking.court.id),
+        });
+      },
       onSettled: () => {
         void queryClient.invalidateQueries({ queryKey: getListMyBookingsQueryKey() });
       },
@@ -77,6 +89,7 @@ export const MyBookingsPage = () => {
     pickedButton.current = button;
     cancelBooking.reset();
     setCancelled(undefined);
+    setAnnouncement(undefined);
     setCancelId(id);
     setDialogOpen(true);
   };
@@ -98,10 +111,17 @@ export const MyBookingsPage = () => {
   };
 
   // The dialog has no trigger button, and after a cancel the row's button is gone.
+  // The cancelled row keeps its place, so focus there doesn't scroll the page.
   const restoreFocus = (event: Event) => {
     event.preventDefault();
-    const target = cancelled ? cancelledNotice.current : pickedButton.current;
+    const target = cancelled ? cancelledRow.current : pickedButton.current;
     (target?.isConnected && !target.matches(':disabled') ? target : heading.current)?.focus();
+    // After the focus move: a screen reader stops reading when focus moves.
+    if (cancelled && facility.data) {
+      setAnnouncement(
+        `Cancelled: ${cancelled.court.name}, ${when(cancelled, facility.data.timezone)}.`
+      );
+    }
   };
 
   if (upcoming.error?.status === 403 || past.error?.status === 403) {
@@ -116,7 +136,7 @@ export const MyBookingsPage = () => {
     );
   }
   if (!facility.data || !upcoming.data || !past.data) {
-    return <p className="text-muted-foreground">Loading…</p>;
+    return <MyBookingsSkeleton />;
   }
 
   const { timezone } = facility.data;
@@ -136,19 +156,16 @@ export const MyBookingsPage = () => {
         </h1>
         <p className="text-muted-foreground">All times are in {timezone} time.</p>
       </div>
-      {cancelled && (
-        <p
-          ref={cancelledNotice}
-          role="status"
-          tabIndex={-1}
-          className="rounded-xl border bg-card p-4 text-sm outline-none"
-        >
-          Cancelled: {cancelled.court.name}, {when(cancelled, timezone)}.
-        </p>
-      )}
+      {/* Rendered while empty: screen readers may skip a live region added with its text.
+          Keep aria-live: the open dialog hides all but [aria-live] nodes from screen readers. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
       <BookingSection
         title="Upcoming"
         bookings={upcoming.data.map(booking => toView(booking, timezone, now))}
+        focusId={cancelled?.id}
+        focusRef={cancelledRow}
         empty={
           <p className="text-muted-foreground">
             No upcoming bookings.{' '}

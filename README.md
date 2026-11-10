@@ -6,6 +6,16 @@ Admins manage courts and see all bookings of a day with the expected revenue.
 
 Stack: TypeScript, NestJS, PostgreSQL + Prisma, Next.js, Docker Compose.
 
+## Live demo
+
+You can try it without installing anything: https://courtly-web-ji2l.onrender.com.
+Log in with one of the demo accounts below. The API docs are at https://courtly-api-cisi.onrender.com/api/docs.
+
+It runs on Render's free plan, built from the same Dockerfiles as Docker Compose. The services sleep after
+15 minutes without visits, so the first page can take a minute or two to open. Anyone can log in as the admin
+there, so the data may differ from a fresh start. The free database expires in December 2026, so after that the
+link may stop working.
+
 ## Run it
 
 You need Docker.

@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   ApiErrorDto,
@@ -11,9 +11,11 @@ import type {
   FacilityDto,
   SlotDto,
 } from '@/shared/api/generated/model';
+import { createQueryClient } from '@/shared/api/query-client';
 import { renderWithClient } from '@/test/render';
 import { server } from '@/test/server';
 import { CourtBookingPage } from './CourtBookingPage';
+import { MyBookingsPage } from './MyBookingsPage';
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(window.location.search),
@@ -219,6 +221,48 @@ describe('CourtBookingPage', () => {
     const twoHours = screen.getByRole('button', { name: twoHoursLabel });
     expect(twoHours).toBeDisabled();
     expect(twoHours).toHaveAccessibleDescription(reason);
+  });
+
+  it('lists a new booking in My bookings at once, in time order', async () => {
+    const later: BookingDto = {
+      ...booking,
+      id: 'b0',
+      startsAt: hourUtc(10),
+      endsAt: hourUtc(11),
+      totalPriceCents: 2400,
+      cancellableUntil: hourUtc(8),
+    };
+    const earlier: BookingDto = { ...later, id: 'b1', startsAt: hourUtc(9), endsAt: hourUtc(10) };
+    serveSlots(() => [slot(9), slot(10, { status: 'BOOKED', bookedByMe: true })]);
+    server.use(
+      http.get<never, never, BookingDto[]>('/api/bookings/me', ({ request }) =>
+        HttpResponse.json(new URL(request.url).searchParams.get('scope') === 'past' ? [] : [later])
+      ),
+      http.post<never, CreateBookingDto, BookingDto>('/api/bookings', () =>
+        HttpResponse.json(earlier, { status: 201 })
+      )
+    );
+    const client = createQueryClient();
+    const user = userEvent.setup();
+
+    const bookingsPage = renderWithClient(<MyBookingsPage />, client);
+    await screen.findByRole('region', { name: 'Upcoming' });
+    bookingsPage.unmount();
+    const courtPage = renderWithClient(<CourtBookingPage courtId="c1" />, client);
+    await user.click(await screen.findByRole('button', { name: '10:00 Free' }));
+    await user.click(screen.getByRole('button', { name: 'Book 10:00–11:00 · €24.00' }));
+    await screen.findByRole('status');
+    courtPage.unmount();
+    // The refetch never answers: the row can only come from the booking itself.
+    server.use(http.get('/api/bookings/me', () => delay('infinite')));
+    renderWithClient(<MyBookingsPage />, client);
+
+    const upcoming = await screen.findByRole('region', { name: 'Upcoming' });
+    expect(
+      within(upcoming)
+        .getAllByRole('listitem')
+        .map(row => row.textContent)
+    ).toEqual([expect.stringContaining('10:00–11:00'), expect.stringContaining('11:00–12:00')]);
   });
 
   it('returns focus to the slot when the dialog is closed', async () => {

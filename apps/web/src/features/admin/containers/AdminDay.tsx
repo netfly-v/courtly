@@ -20,6 +20,7 @@ import {
   BookingStatus,
   type FacilityDto,
 } from '@/shared/api/generated/model';
+import { DayDetailsSkeleton } from '../ui/AdminDaySkeleton';
 import { DayBookingsTable, type DayBookingView } from '../ui/DayBookingsTable';
 import { DayNav } from '../ui/DayNav';
 import { DayTotals } from '../ui/DayTotals';
@@ -56,7 +57,7 @@ const renderDay = (
     );
   }
   if (!data) {
-    return <p className="text-muted-foreground">Loading…</p>;
+    return <DayDetailsSkeleton />;
   }
   const { bookings, totals } = data;
   return (

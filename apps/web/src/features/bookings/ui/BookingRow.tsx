@@ -1,4 +1,5 @@
 import { cn } from 'cn';
+import type { Ref } from 'react';
 import { SPORT_BACKGROUND } from '@/entities/court/ui/sport-tone';
 import type { Sport } from '@/shared/api/generated/model';
 import { Badge } from '@/shared/ui/badge';
@@ -37,10 +38,11 @@ export interface BookingView {
 
 interface BookingRowProps {
   booking: BookingView;
+  headingRef?: Ref<HTMLHeadingElement>;
   onCancel: (id: string, button: HTMLButtonElement) => void;
 }
 
-export const BookingRow = ({ booking, onCancel }: BookingRowProps) => (
+export const BookingRow = ({ booking, headingRef, onCancel }: BookingRowProps) => (
   <Card size="sm" className="flex-row gap-0 py-0">
     {/* Hidden from screen readers: the details line already says the date. */}
     <div
@@ -58,7 +60,9 @@ export const BookingRow = ({ booking, onCancel }: BookingRowProps) => (
     <div className="flex min-w-0 flex-1 flex-col gap-3 py-3">
       <CardHeader>
         <CardTitle>
-          <h3 className="text-base font-semibold">{booking.court}</h3>
+          <h3 ref={headingRef} tabIndex={-1} className="text-base font-semibold outline-none">
+            {booking.court}
+          </h3>
         </CardTitle>
         <CardDescription>{booking.details}</CardDescription>
         {booking.badge && (

@@ -1,4 +1,4 @@
-import { type ReactNode, useId } from 'react';
+import { type ReactNode, type Ref, useId } from 'react';
 import { BookingRow, type BookingView } from './BookingRow';
 
 interface BookingSectionProps {
@@ -6,9 +6,18 @@ interface BookingSectionProps {
   bookings: BookingView[];
   empty: ReactNode;
   onCancel: (id: string, button: HTMLButtonElement) => void;
+  focusId?: string;
+  focusRef?: Ref<HTMLHeadingElement>;
 }
 
-export const BookingSection = ({ title, bookings, empty, onCancel }: BookingSectionProps) => {
+export const BookingSection = ({
+  title,
+  bookings,
+  empty,
+  onCancel,
+  focusId,
+  focusRef,
+}: BookingSectionProps) => {
   const headingId = useId();
 
   return (
@@ -21,7 +30,11 @@ export const BookingSection = ({ title, bookings, empty, onCancel }: BookingSect
         <ul className="flex flex-col gap-3">
           {bookings.map(booking => (
             <li key={booking.id}>
-              <BookingRow booking={booking} onCancel={onCancel} />
+              <BookingRow
+                booking={booking}
+                headingRef={booking.id === focusId ? focusRef : undefined}
+                onCancel={onCancel}
+              />
             </li>
           ))}
         </ul>

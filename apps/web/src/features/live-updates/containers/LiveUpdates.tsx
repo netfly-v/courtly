@@ -34,10 +34,15 @@ export const LiveUpdates = () => {
       });
       current.addEventListener('availability.changed', event => {
         const { courtId, date } = JSON.parse(event.data as string) as AvailabilityChangedEventDto;
+        // Also days not on screen: going back to one would show the old slots until its refetch.
         void queryClient.invalidateQueries({
           queryKey: getGetCourtAvailabilityQueryKey(courtId, { date }),
+          refetchType: 'all',
         });
-        void queryClient.invalidateQueries({ queryKey: getListDayBookingsQueryKey({ date }) });
+        void queryClient.invalidateQueries({
+          queryKey: getListDayBookingsQueryKey({ date }),
+          refetchType: 'all',
+        });
         // A booking changes the court's upcoming count, shown in the Turn off dialog.
         void queryClient.invalidateQueries({ queryKey: getListAdminCourtsQueryKey() });
       });

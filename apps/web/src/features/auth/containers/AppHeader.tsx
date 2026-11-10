@@ -47,6 +47,7 @@ export const AppHeader = () => {
     <HeaderBar
       homeHref={me.data?.role === Role.ADMIN ? '/admin' : '/'}
       links={navLinks(me.data?.role, pathname)}
+      loading={me.isPending}
       userName={me.data?.name}
       userInitials={me.data && initials(me.data.name)}
       loggingOut={logout.isPending}

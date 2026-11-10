@@ -1,11 +1,23 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ApiErrorDto, BookingDto, FacilityDto } from '@/shared/api/generated/model';
+import { createQueryClient } from '@/shared/api/query-client';
+import type {
+  ApiErrorDto,
+  AvailabilityDto,
+  BookingDto,
+  FacilityDto,
+  SlotDto,
+} from '@/shared/api/generated/model';
 import { renderWithClient } from '@/test/render';
 import { server } from '@/test/server';
+import { CourtBookingPage } from './CourtBookingPage';
 import { MyBookingsPage } from './MyBookingsPage';
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
 
 const facility: FacilityDto = { timezone: 'Europe/Lisbon', bookingDaysAhead: 30 };
 // 08:30 in Lisbon.
@@ -93,12 +105,11 @@ describe('MyBookingsPage', () => {
 
   it('cancels a booking after confirmation', async () => {
     let cancelledId: string | undefined;
-    const current = () => booking(cancelledId ? { status: 'CANCELLED', cancelledAt: NOW } : {});
-    serveBookings(() => [current()]);
+    serveBookings(() => [booking()]);
     server.use(
       http.post<{ id: string }, never, BookingDto>('/api/bookings/:id/cancel', ({ params }) => {
         cancelledId = params.id;
-        return HttpResponse.json(current());
+        return HttpResponse.json(booking({ status: 'CANCELLED', cancelledAt: NOW }));
       })
     );
     const user = userEvent.setup();
@@ -107,17 +118,90 @@ describe('MyBookingsPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Cancel booking' }));
     const dialog = screen.getByRole('alertdialog');
     expect(dialog).toHaveTextContent('Padel 1, Wed 15 Jul, 13:00–14:00');
+    // The list refetch never answers: the cancelled row can only come from the cancel itself.
+    server.use(http.get('/api/bookings/me', () => delay('infinite')));
     await user.click(within(dialog).getByRole('button', { name: 'Cancel booking' }));
 
-    const notice = await screen.findByRole('status');
-    expect(notice).toHaveTextContent('Cancelled: Padel 1, Wed 15 Jul, 13:00–14:00.');
-    await waitFor(() => expect(notice).toHaveFocus());
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Cancelled: Padel 1, Wed 15 Jul, 13:00–14:00.'
+      )
+    );
     expect(cancelledId).toBe('b1');
     const upcoming = screen.getByRole('region', { name: 'Upcoming' });
-    expect(await within(upcoming).findByText('Cancelled')).toBeInTheDocument();
-    expect(
-      within(upcoming).queryByRole('button', { name: 'Cancel booking' })
-    ).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(within(upcoming).getByRole('heading', { name: 'Padel 1' })).toHaveFocus()
+    );
+    const [row, ...others] = within(upcoming).getAllByRole('listitem');
+    expect(others).toHaveLength(0);
+    expect(row).toHaveTextContent('Cancelled');
+    expect(within(row!).queryByRole('button', { name: 'Cancel booking' })).not.toBeInTheDocument();
+  });
+
+  it('shows the cancelled hours as free on the court page at once', async () => {
+    // 00:00–02:00 on 16 July in Lisbon, but it starts on 15 July in New York and in UTC.
+    const twoHours = booking({
+      startsAt: '2026-07-15T23:00:00.000Z',
+      endsAt: '2026-07-16T01:00:00.000Z',
+      totalPriceCents: 4800,
+      cancellableUntil: '2026-07-15T21:00:00.000Z',
+    });
+    const slot = (startsAt: string, endsAt: string, bookedByMe: boolean): SlotDto => ({
+      startsAt,
+      endsAt,
+      status: 'BOOKED',
+      bookedByMe,
+    });
+    const availability: AvailabilityDto = {
+      court: {
+        id: 'c1',
+        name: 'Padel 1',
+        sport: 'PADEL',
+        hourlyPriceCents: 2400,
+        openHour: 0,
+        closeHour: 22,
+        isActive: true,
+      },
+      date: '2026-07-16',
+      slots: [
+        slot('2026-07-15T23:00:00.000Z', '2026-07-16T00:00:00.000Z', true),
+        slot('2026-07-16T00:00:00.000Z', '2026-07-16T01:00:00.000Z', true),
+        slot('2026-07-16T01:00:00.000Z', '2026-07-16T02:00:00.000Z', false),
+      ],
+    };
+    serveBookings(() => [twoHours]);
+    server.use(
+      http.get<never, never, AvailabilityDto>('/api/courts/:id/availability', () =>
+        HttpResponse.json(availability)
+      ),
+      http.post<{ id: string }, never, BookingDto>('/api/bookings/:id/cancel', () =>
+        HttpResponse.json({ ...twoHours, status: 'CANCELLED', cancelledAt: NOW })
+      )
+    );
+    window.history.replaceState(null, '', '/courts/c1?date=2026-07-16');
+    const client = createQueryClient();
+    const user = userEvent.setup();
+
+    const courtPage = renderWithClient(<CourtBookingPage courtId="c1" />, client);
+    expect(await screen.findAllByText('Your booking')).toHaveLength(2);
+    courtPage.unmount();
+    // Refetches never answer from here on: the free slots can only come from the cancel itself.
+    server.use(http.get('/api/courts/:id/availability', () => delay('infinite')));
+    const bookingsPage = renderWithClient(<MyBookingsPage />, client);
+    await user.click(await screen.findByRole('button', { name: 'Cancel booking' }));
+    await user.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancel booking' })
+    );
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Cancelled'));
+    bookingsPage.unmount();
+    renderWithClient(<CourtBookingPage courtId="c1" />, client);
+
+    const cells = await screen.findAllByRole('listitem');
+    expect(cells.map(cell => cell.textContent)).toEqual([
+      '00:00 Free',
+      '01:00 Free',
+      '02:00 Booked',
+    ]);
   });
 
   it('allows cancelling until exactly 2 hours before the start', async () => {

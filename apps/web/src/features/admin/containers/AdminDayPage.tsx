@@ -2,9 +2,8 @@
 
 import { Suspense } from 'react';
 import { useGetFacility } from '@/shared/api/generated';
+import { AdminDaySkeleton } from '../ui/AdminDaySkeleton';
 import { AdminDay } from './AdminDay';
-
-const loading = <p className="text-muted-foreground">Loading…</p>;
 
 export const AdminDayPage = () => {
   const facility = useGetFacility({ query: { staleTime: Infinity } });
@@ -12,7 +11,7 @@ export const AdminDayPage = () => {
   if (facility.data) {
     return (
       // useSearchParams on a static route needs a Suspense boundary, or next build fails.
-      <Suspense fallback={loading}>
+      <Suspense fallback={<AdminDaySkeleton />}>
         <AdminDay facility={facility.data} />
       </Suspense>
     );
@@ -24,5 +23,5 @@ export const AdminDayPage = () => {
       </p>
     );
   }
-  return loading;
+  return <AdminDaySkeleton />;
 };
